@@ -1,3 +1,12 @@
+<a name="v2.2.1"></a>
+# [v2.2.1](https://github.com/AleksandrRogov/DynamicsWebApi/releases/tag/v2.2.1) - 20 Feb 2025
+
+**Fixes**
+- Wrong line endings in the batch request resulted in `InnerException : System.ArgumentException: Stream was not readable` when `inChangeSet` was set to `false`. [#183](https://github.com/AleksandrRogov/DynamicsWebApi/issues/183)
+
+[Changes][v2.2.1]
+
+
 <a name="v2.2.0"></a>
 # [v2.2.0](https://github.com/AleksandrRogov/DynamicsWebApi/releases/tag/v2.2.0) - 09 Feb 2025
 
@@ -8,7 +17,7 @@
 - Slightly optimized `dateReviver` function.
 
 **Fixes**
-- Modified `expand` property in the type definitions to accept a `string`. It could always accept a `string` instead of an array of expand objects.
+- Modified `expand` property in the type definitions to accept a `string`. It could always accept a `string` together with an array of expand objects.
 
 [Changes][v2.2.0]
 
@@ -1004,6 +1013,7 @@ Added:
 [Changes][v1.2.0]
 
 
+[v2.2.1]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.1.7...v2.2.0
 [v2.1.7]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v.2.1.6...v2.1.7
 [v.2.1.6]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.1.5...v.2.1.6

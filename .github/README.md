@@ -446,6 +446,44 @@ const result = await dynamicsWebApi.create<Lead>(request);
 const leadId = result.leadid;
 ```
 
+#### Create a table row with a related record in a single operation
+
+Creating an account with a related contact:
+
+```ts
+const id = await dynamicsWebApi.create({
+    collection: "accounts",
+    data: {
+        name: "Test Account",
+        primarycontactid: {
+            firstname: "Test Related Contact"
+        }
+    }
+});
+
+//if created record should be returned instead of an id, use returnRepresentation
+
+const createdAccount = await dynamicsWebApi.create({
+    collection: "accounts",
+    data: {
+        name: "Test Account",
+        primarycontactid: {
+            firstname: "Test Related Contact"
+        }
+    },
+    //make sure to return only columns that are necessary to increase the performance
+    returnRepresentation: true,
+    select: ["name"],
+    expand: [{
+        property: "primarycontactid",
+        select: ["firstname"]
+    }]
+});
+
+const accountName = createdAccount.name;
+const contactFirstName = createdAccount.primarycontactid.firstname;
+```
+
 ### Update a table row
 
 ```ts
@@ -1145,8 +1183,7 @@ const contactId = responses[0];
 const salesorderId = responses[1];
 ```
 
-**Important!** Web API seems to have a limitation (or a bug) where it does not return the response with `returnRepresentation` set to `true`. It happens only if you are trying to return a representation of an entity that is being
-linked to another one in a single request. [More Info and examples is in this issue](https://github.com/AleksandrRogov/DynamicsWebApi/issues/112).
+**Important!** Web API seems to have a limitation (or a bug) where it does not return the response with `returnRepresentation` set to `true` when `expand` is provided with `update` or `upsert` operations. [More Details](#returnrepresentation-with-expand-throws-an-error)
 
 ### Controlling Change Sets
 
@@ -1156,7 +1193,7 @@ In some cases this can be an undesirable behaviour and with v2 there are several
 
 **Important!** `contentId` can **only** be used inside the Change Sets. Any `contentId` set in a request won't be included in a non-atomic batch operation! If `$1` parameter was used outside of Change Set you will get an error similar to the following: `Error identified in Payload provided by the user for Entity :'<entity name>'`.
 
-Per batch operation:
+**Per batch operation:**
 
 ```ts
 const contact = {
@@ -1186,9 +1223,7 @@ const responses = await dynamicsWebApi.executeBatch({
 });
 ```
 
-**Important!** There seem to be a bug in Dynamics 365 Web Api (Checked: July 16, 2023) where it does not process the last operation in a batch request (Change Sets work fine). As a workaround, you can add any "GET" operation at the end to make it work, like in the following example. Please let me know if this bug was fixed.
-
-Per request:
+**Per request:**
 
 ```ts
 dynamicsWebApi.startBatch();
@@ -1203,19 +1238,12 @@ dynamicsWebApi.create({
     inChangeSet: false //<--- do not include in a change set
 });
 
-//this is a workaround to a D365 bug (checked on July 16, 2023)
-dynamicsWebApi.retrieveMutliple({
-    collection: "contacts",
-    top: 1,
-    select: ["firstname"]
-});
-
 const responses = await dynamicsWebApi.executeBatch();
 ```
 
-These two samples do the same thing: make all requests non-atomic. 
+The two examples above do the same thing: make all requests non-atomic. 
 
-By setting `inChangeSet:false` per request gives more control over which operation should be included in a change set and which ones do not, for example:
+By setting `inChangeSet: false` per request gives more control over which operation should be included in a change set and which ones do not, for example:
 
 ```ts
 dynamicsWebApi.startBatch();
@@ -1279,12 +1307,62 @@ Currently, there are some limitations in DynamicsWebApi Batch Operations:
 * Operations that use pagination to recursively retrieve all records cannot be used in a 'batch mode'. These include: `retrieveAll`, `retrieveAllRequest`, `countAll`, `fetchAll`, `executeFetchXmlAll`.
 You will get an error saying that the operation is incompatible with a 'batch mode'.
 
-There are also out of the box Web API limitations for batch operations:
+There are also out of the box Dataverse Web API limitations for batch operations:
 
 * Batch requests can contain up to 1000 individual requests and cannot contain other batch requests.
 * Not supported in Microsoft Power Pages. (checked June 2024)
 
 You can find an official documentation that covers Web API batch requests here: [Execute batch operations using the Web API](https://docs.microsoft.com/en-us/dynamics365/customer-engagement/developer/webapi/execute-batch-operations-using-web-api).
+
+
+#### returnRepresentation with expand throws an error
+`checked: Feb 2025`
+
+The Dataverse Web API seems to have a limitation (or a bug) where it does not return the response with `returnRepresentation` set to `true` when `expand` is provided with `update` or `upsert` operations. The error itself is also very misleading:
+
+```
+...the entity with a name = '<entity name>' with namemapping = 'logical' was not found in the MetadataCache.LazyDynamicMetadataCache...
+```
+
+As a workaround here, remove `returnRepresentation` from `update` or `upsert` and add a `retrieve` operation that returns a recently created/updated table with an `expand` at the end. This does not seem to impact a `create` operation.
+
+Example:
+
+```ts
+const accountId = "71d78e22-e238-4811-b5df-b4854088819a";
+
+dynamicsWebApi.startBatch();
+
+dynamicsWebApi.update({
+  collection: "accounts",
+  key: accountId,
+  data: {
+    name: "Account Name",
+  }
+  //adding the following parameters will throw an error (because of expand)
+  //returnRepresentation: true,
+  //select: ["name"],
+  //expand: [{
+    // property: "primarycontactid",
+    // select: ["firstname"]
+  //}]
+});
+
+//a workaround
+dynamicsWebApi.retrieve({
+  collection: "accounts",
+  key: accountId,
+  select: ["name"],
+  expand: [{
+    property: "primarycontactid",
+    select: ["firstname"]
+  }]
+});
+
+const results = await dynamicsWebApi.executeBatch();
+//results[0] will be "true"
+//results[1] will be a retrieved record object
+```
 
 ## Work with Table Definitions (Entity Metadata)
 
