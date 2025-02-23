@@ -2268,7 +2268,7 @@ const isDeleted = await dynamicsWebApi.deleteRecord({
 
 ## Work with Dataverse Search API
 
-**Important!** Currently only Search API 1.0 is supported. Search API 2.0 is coming with `v.2.2.0`. 
+**Important!** Currently only Search API 1.0 is supported. Search API 2.0 is coming with `v.2.3.0`. 
 If you must use 2.0, you could [use corresponding Actions](#execute-web-api-actions) for now. [more info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/overview?tabs=sdk)
 
 DynamicsWebApi can be used to call Dataverse Search API and utilize its powerful Search, Suggest and Autocomplete capabilities. Before using, I highly recommend to get familiar with it by reading an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/legacy).
