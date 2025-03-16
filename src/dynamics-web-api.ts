@@ -1,35 +1,6 @@
-﻿import { generateUUID, isObject, copyRequest, copyObject } from "./utils/Utility";
-import { ErrorHelper } from "./helpers/ErrorHelper";
+﻿import { DataverseClient, type IDataverseClient } from "./client/dataverse";
 import { getCollectionName } from "./client/RequestClient";
-import type { InternalRequest } from "./types";
-import {
-    associate,
-    associateSingleValued,
-    callAction,
-    callFunction,
-    count,
-    countAll,
-    create,
-    createAttribute,
-    createEntity,
-    deleteRecord,
-    disassociate,
-    disassociateSingleValued,
-    downloadFile,
-    fetchXml,
-    fetchXmlAll,
-    retrieve,
-    retrieveAll,
-    retrieveEntities,
-    retrieveEntity,
-    retrieveMultiple,
-    update,
-    updateEntity,
-    updateSingleProperty,
-    uploadFile,
-    upsert,
-} from "./requests";
-import { DataverseClient, type IDataverseClient } from "./client/dataverse";
+import * as Dataverse from "./requests";
 
 /**
  * Microsoft Dataverse Web API helper library for Node.js and Browser.
@@ -77,7 +48,7 @@ export class DynamicsWebApi {
      *const response = await dynamicsWebApi.create(request);
      *
      */
-    create = async <TData = any>(request: CreateRequest<TData>): Promise<TData> => create(request, this.#client);
+    create = async <TData = any>(request: CreateRequest<TData>): Promise<TData> => Dataverse.create(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a record.
@@ -95,7 +66,7 @@ export class DynamicsWebApi {
      *
      *const response = await dynamicsWebApi.retrieve(request);
      */
-    retrieve = async <T = any>(request: RetrieveRequest): Promise<T> => retrieve(request, this.#client);
+    retrieve = async <T = any>(request: RetrieveRequest): Promise<T> => Dataverse.retrieve(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a record.
@@ -103,7 +74,7 @@ export class DynamicsWebApi {
      * @param {DWARequest} request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    update = async <TData = any>(request: UpdateRequest<TData>): Promise<TData> => update(request, this.#client);
+    update = async <TData = any>(request: UpdateRequest<TData>): Promise<TData> => Dataverse.update(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a single value in the record.
@@ -111,7 +82,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    updateSingleProperty = async <T = any>(request: UpdateSinglePropertyRequest): Promise<T> => updateSingleProperty(request, this.#client);
+    updateSingleProperty = async <T = any>(request: UpdateSinglePropertyRequest): Promise<T> => Dataverse.updateSingleProperty(request, this.#client);
 
     /**
      * Sends an asynchronous request to delete a record.
@@ -119,7 +90,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    deleteRecord = async (request: DeleteRequest): Promise<any> => deleteRecord(request, this.#client);
+    deleteRecord = async (request: DeleteRequest): Promise<any> => Dataverse.deleteRecord(request, this.#client);
 
     /**
      * Sends an asynchronous request to upsert a record.
@@ -127,20 +98,20 @@ export class DynamicsWebApi {
      * @param {DWARequest} request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    upsert = async <TData = any>(request: UpsertRequest<TData>): Promise<TData> => upsert(request, this.#client);
+    upsert = async <TData = any>(request: UpsertRequest<TData>): Promise<TData> => Dataverse.upsert(request, this.#client);
 
     /**
      * Upload file to a File Attribute
      *
      * @param request - An object that represents all possible options for a current request.
      */
-    uploadFile = async (request: UploadRequest): Promise<void> => uploadFile(request, this.#client);
+    uploadFile = async (request: UploadRequest): Promise<void> => Dataverse.uploadFile(request, this.#client);
 
     /**
      * Download a file from a File Attribute
      * @param request - An object that represents all possible options for a current request.
      */
-    downloadFile = (request: DownloadRequest): Promise<DownloadResponse> => downloadFile(request, this.#client);
+    downloadFile = (request: DownloadRequest): Promise<DownloadResponse> => Dataverse.downloadFile(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve records.
@@ -150,7 +121,7 @@ export class DynamicsWebApi {
      * @returns {Promise} D365 Web Api Response
      */
     retrieveMultiple = async <T = any>(request: RetrieveMultipleRequest, nextPageLink?: string): Promise<RetrieveMultipleResponse<T>> =>
-        retrieveMultiple(request, this.#client, nextPageLink);
+        Dataverse.retrieveMultiple(request, this.#client, nextPageLink);
 
     /**
      * Sends an asynchronous request to retrieve all records.
@@ -158,7 +129,7 @@ export class DynamicsWebApi {
      * @param {DWARequest} request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveAll = <T = any>(request: RetrieveMultipleRequest): Promise<AllResponse<T>> => retrieveAll(request, this.#client);
+    retrieveAll = <T = any>(request: RetrieveMultipleRequest): Promise<AllResponse<T>> => Dataverse.retrieveAll(request, this.#client);
 
     /**
      * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system. It is limited by the maximum number of entities that can be returned. Returns: Number
@@ -166,14 +137,14 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    count = async (request: CountRequest): Promise<number> => count(request, this.#client);
+    count = async (request: CountRequest): Promise<number> => Dataverse.count(request, this.#client);
 
     /**
      * Sends an asynchronous request to count records. Returns: Number
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    countAll = async (request: CountAllRequest): Promise<number> => countAll(request, this.#client);
+    countAll = async (request: CountAllRequest): Promise<number> => Dataverse.countAll(request, this.#client);
 
     /**
      * Sends an asynchronous request to execute FetchXml to retrieve records. Returns: DWA.Types.FetchXmlResponse
@@ -181,7 +152,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    fetch = async <T = any>(request: FetchXmlRequest): Promise<FetchXmlResponse<T>> => fetchXml(request, this.#client);
+    fetch = async <T = any>(request: FetchXmlRequest): Promise<FetchXmlResponse<T>> => Dataverse.fetchXml(request, this.#client);
 
     /**
      * Sends an asynchronous request to execute FetchXml to retrieve all records.
@@ -189,7 +160,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    fetchAll = async <T = any>(request: FetchAllRequest): Promise<FetchXmlResponse<T>> => fetchXmlAll(request, this.#client);
+    fetchAll = async <T = any>(request: FetchAllRequest): Promise<FetchXmlResponse<T>> => Dataverse.fetchXmlAll(request, this.#client);
 
     /**
      * Associate for a collection-valued navigation property. (1:N or N:N)
@@ -197,7 +168,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    associate = async (request: AssociateRequest): Promise<void> => associate(request, this.#client);
+    associate = async (request: AssociateRequest): Promise<void> => Dataverse.associate(request, this.#client);
 
     /**
      * Disassociate for a collection-valued navigation property.
@@ -205,7 +176,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    disassociate = async (request: DisassociateRequest): Promise<void> => disassociate(request, this.#client);
+    disassociate = async (request: DisassociateRequest): Promise<void> => Dataverse.disassociate(request, this.#client);
 
     /**
      * Associate for a single-valued navigation property. (1:N)
@@ -213,7 +184,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    associateSingleValued = async (request: AssociateSingleValuedRequest): Promise<void> => associateSingleValued(request, this.#client);
+    associateSingleValued = async (request: AssociateSingleValuedRequest): Promise<void> => Dataverse.associateSingleValued(request, this.#client);
 
     /**
      * Removes a reference to an entity for a single-valued navigation property. (1:N)
@@ -221,7 +192,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    disassociateSingleValued = async (request: DisassociateSingleValuedRequest): Promise<void> => disassociateSingleValued(request, this.#client);
+    disassociateSingleValued = async (request: DisassociateSingleValuedRequest): Promise<void> => Dataverse.disassociateSingleValued(request, this.#client);
 
     /**
      * Calls a Web API function
@@ -230,7 +201,7 @@ export class DynamicsWebApi {
      * @returns {Promise} D365 Web Api Response
      */
     callFunction: CallFunction = async <T = any>(request: string | BoundFunctionRequest | UnboundFunctionRequest): Promise<T> =>
-        callFunction(request, this.#client);
+        Dataverse.callFunction(request, this.#client);
 
     /**
      * Calls a Web API action
@@ -239,14 +210,14 @@ export class DynamicsWebApi {
      * @returns {Promise} D365 Web Api Response
      */
     callAction: CallAction = async <TResponse = any, TAction = any>(request: BoundActionRequest<TAction> | UnboundActionRequest<TAction>): Promise<TResponse> =>
-        callAction(request, this.#client);
+        Dataverse.callAction(request, this.#client);
     /**
      * Sends an asynchronous request to create an entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    createEntity = <T = any>(request: CreateEntityRequest): Promise<T> => createEntity(request, this.#client);
+    createEntity = <T = any>(request: CreateEntityRequest): Promise<T> => Dataverse.createEntity(request, this.#client);
 
     /**
      * Sends an asynchronous request to update an entity definition.
@@ -254,7 +225,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    updateEntity = <T = any>(request: UpdateEntityRequest): Promise<T> => updateEntity(request, this.#client);
+    updateEntity = <T = any>(request: UpdateEntityRequest): Promise<T> => Dataverse.updateEntity(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a specific entity definition.
@@ -262,7 +233,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveEntity = <T = any>(request: RetrieveEntityRequest): Promise<T> => retrieveEntity(request, this.#client);
+    retrieveEntity = <T = any>(request: RetrieveEntityRequest): Promise<T> => Dataverse.retrieveEntity(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve entity definitions.
@@ -270,7 +241,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveEntities = <T = any>(request?: RetrieveEntitiesRequest): Promise<RetrieveMultipleResponse<T>> => retrieveEntities(this.#client, request);
+    retrieveEntities = <T = any>(request?: RetrieveEntitiesRequest): Promise<RetrieveMultipleResponse<T>> => Dataverse.retrieveEntities(this.#client, request);
 
     /**
      * Sends an asynchronous request to create an attribute.
@@ -278,7 +249,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    createAttribute = <T = any>(request: CreateAttributeRequest): Promise<T> => createAttribute(request, this.#client);
+    createAttribute = <T = any>(request: CreateAttributeRequest): Promise<T> => Dataverse.createAttribute(request, this.#client);
 
     /**
      * Sends an asynchronous request to update an attribute.
@@ -286,27 +257,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    updateAttribute = <T = any>(request: UpdateAttributeRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.updateAttribute", "request");
-        ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.updateAttribute", "request.data");
-        ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.updateAttribute", "request.entityKey");
-        ErrorHelper.guidParameterCheck(request.data.MetadataId, "DynamicsWebApi.updateAttribute", "request.data.MetadataId");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.updateAttribute", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "EntityDefinitions";
-        internalRequest.navigationProperty = "Attributes";
-        internalRequest.navigationPropertyKey = request.data.MetadataId;
-        internalRequest.metadataAttributeType = request.castType;
-        internalRequest.key = request.entityKey;
-        internalRequest.functionName = "updateAttribute";
-        internalRequest.method = "PUT";
-
-        return this.update(<UpdateRequest>internalRequest);
-    };
+    updateAttribute = <T = any>(request: UpdateAttributeRequest): Promise<T> => Dataverse.updateAttribute(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve attribute metadata for a specified entity definition.
@@ -314,23 +265,8 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveAttributes = <T = any>(request: RetrieveAttributesRequest): Promise<RetrieveMultipleResponse<T>> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveAttributes", "request");
-        ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.retrieveAttributes", "request.entityKey");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveAttributes", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "EntityDefinitions";
-        internalRequest.navigationProperty = "Attributes";
-        internalRequest.metadataAttributeType = request.castType;
-        internalRequest.key = request.entityKey;
-        internalRequest.functionName = "retrieveAttributes";
-
-        return this.retrieveMultiple(<RetrieveMultipleRequest>internalRequest);
-    };
+    retrieveAttributes = <T = any>(request: RetrieveAttributesRequest): Promise<RetrieveMultipleResponse<T>> =>
+        Dataverse.retrieveAttributes(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a specific attribute metadata for a specified entity definition.
@@ -338,25 +274,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveAttribute = <T = any>(request: RetrieveAttributeRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveAttributes", "request");
-        ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.retrieveAttribute", "request.entityKey");
-        ErrorHelper.keyParameterCheck(request.attributeKey, "DynamicsWebApi.retrieveAttribute", "request.attributeKey");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveAttribute", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "EntityDefinitions";
-        internalRequest.navigationProperty = "Attributes";
-        internalRequest.navigationPropertyKey = request.attributeKey;
-        internalRequest.metadataAttributeType = request.castType;
-        internalRequest.key = request.entityKey;
-        internalRequest.functionName = "retrieveAttribute";
-
-        return this.retrieve(<RetrieveRequest>internalRequest);
-    };
+    retrieveAttribute = <T = any>(request: RetrieveAttributeRequest): Promise<T> => Dataverse.retrieveAttribute(request, this.#client);
 
     /**
      * Sends an asynchronous request to create a relationship definition.
@@ -364,16 +282,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    createRelationship = <T = any>(request: CreateRelationshipRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.createRelationship", "request");
-        ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.createRelationship", "request.data");
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "RelationshipDefinitions";
-        internalRequest.functionName = "createRelationship";
-
-        return this.create(<CreateRequest>internalRequest);
-    };
+    createRelationship = <T = any>(request: CreateRelationshipRequest): Promise<T> => Dataverse.createRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a relationship definition.
@@ -381,24 +290,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    updateRelationship = <T = any>(request: UpdateRelationshipRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.updateRelationship", "request");
-        ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.updateRelationship", "request.data");
-        ErrorHelper.guidParameterCheck(request.data.MetadataId, "DynamicsWebApi.updateRelationship", "request.data.MetadataId");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.updateRelationship", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "RelationshipDefinitions";
-        internalRequest.key = request.data.MetadataId;
-        internalRequest.navigationProperty = request.castType;
-        internalRequest.functionName = "updateRelationship";
-        internalRequest.method = "PUT";
-
-        return this.update(<UpdateRequest>internalRequest);
-    };
+    updateRelationship = <T = any>(request: UpdateRelationshipRequest): Promise<T> => Dataverse.updateRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to delete a relationship definition.
@@ -406,16 +298,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    deleteRelationship = (request: DeleteRelationshipRequest): Promise<any> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.deleteRelationship", "request");
-        ErrorHelper.keyParameterCheck(request.key, "DynamicsWebApi.deleteRelationship", "request.key");
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "RelationshipDefinitions";
-        internalRequest.functionName = "deleteRelationship";
-
-        return this.deleteRecord(<DeleteRequest>internalRequest);
-    };
+    deleteRelationship = (request: DeleteRelationshipRequest): Promise<any> => Dataverse.deleteRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve relationship definitions.
@@ -423,21 +306,8 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveRelationships = <T = any>(request?: RetrieveRelationshipsRequest): Promise<RetrieveMultipleResponse<T>> => {
-        const internalRequest: InternalRequest = !request ? {} : copyRequest(request);
-
-        internalRequest.collection = "RelationshipDefinitions";
-        internalRequest.functionName = "retrieveRelationships";
-
-        if (request) {
-            if (request.castType) {
-                ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveRelationships", "request.castType");
-                internalRequest.navigationProperty = request.castType;
-            }
-        }
-
-        return this.retrieveMultiple(<RetrieveMultipleRequest>internalRequest);
-    };
+    retrieveRelationships = <T = any>(request?: RetrieveRelationshipsRequest): Promise<RetrieveMultipleResponse<T>> =>
+        Dataverse.retrieveRelationships(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a specific relationship definition.
@@ -445,21 +315,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveRelationship = <T = any>(request: RetrieveRelationshipRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveRelationship", "request");
-        ErrorHelper.keyParameterCheck(request.key, "DynamicsWebApi.retrieveRelationship", "request.key");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveRelationship", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "RelationshipDefinitions";
-        internalRequest.navigationProperty = request.castType;
-        internalRequest.functionName = "retrieveRelationship";
-
-        return this.retrieve(<RetrieveRequest>internalRequest);
-    };
+    retrieveRelationship = <T = any>(request: RetrieveRelationshipRequest): Promise<T> => Dataverse.retrieveRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to create a Global Option Set definition
@@ -467,16 +323,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    createGlobalOptionSet = <T = any>(request: CreateGlobalOptionSetRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.createGlobalOptionSet", "request");
-        ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.createGlobalOptionSet", "request.data");
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "GlobalOptionSetDefinitions";
-        internalRequest.functionName = "createGlobalOptionSet";
-
-        return this.create(<CreateRequest>internalRequest);
-    };
+    createGlobalOptionSet = <T = any>(request: CreateGlobalOptionSetRequest): Promise<T> => Dataverse.createGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a Global Option Set.
@@ -484,23 +331,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    updateGlobalOptionSet = <T = any>(request: UpdateGlobalOptionSetRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.updateGlobalOptionSet", "request");
-        ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.updateGlobalOptionSet", "request.data");
-        ErrorHelper.guidParameterCheck(request.data.MetadataId, "DynamicsWebApi.updateGlobalOptionSet", "request.data.MetadataId");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.updateGlobalOptionSet", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "GlobalOptionSetDefinitions";
-        internalRequest.key = request.data.MetadataId;
-        internalRequest.functionName = "updateGlobalOptionSet";
-        internalRequest.method = "PUT";
-
-        return this.update(<UpdateRequest>internalRequest);
-    };
+    updateGlobalOptionSet = <T = any>(request: UpdateGlobalOptionSetRequest): Promise<T> => Dataverse.updateGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to delete a Global Option Set.
@@ -508,15 +339,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    deleteGlobalOptionSet = (request: DeleteGlobalOptionSetRequest): Promise<any> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.deleteGlobalOptionSet", "request");
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "GlobalOptionSetDefinitions";
-        internalRequest.functionName = "deleteGlobalOptionSet";
-
-        return this.deleteRecord(<DeleteRequest>internalRequest);
-    };
+    deleteGlobalOptionSet = (request: DeleteGlobalOptionSetRequest): Promise<any> => Dataverse.deleteGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve Global Option Set definitions.
@@ -524,20 +347,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveGlobalOptionSet = <T = any>(request: RetrieveGlobalOptionSetRequest): Promise<T> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveGlobalOptionSet", "request");
-
-        if (request.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveGlobalOptionSet", "request.castType");
-        }
-
-        const internalRequest = copyRequest(request);
-        internalRequest.collection = "GlobalOptionSetDefinitions";
-        internalRequest.navigationProperty = request.castType;
-        internalRequest.functionName = "retrieveGlobalOptionSet";
-
-        return this.retrieve(<RetrieveRequest>internalRequest);
-    };
+    retrieveGlobalOptionSet = <T = any>(request: RetrieveGlobalOptionSetRequest): Promise<T> => Dataverse.retrieveGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve Global Option Set definitions.
@@ -545,151 +355,49 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveGlobalOptionSets = <T = any>(request?: RetrieveGlobalOptionSetsRequest): Promise<RetrieveMultipleResponse<T>> => {
-        const internalRequest: InternalRequest = !request ? {} : copyRequest(request);
-
-        internalRequest.collection = "GlobalOptionSetDefinitions";
-        internalRequest.functionName = "retrieveGlobalOptionSets";
-
-        if (request?.castType) {
-            ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveGlobalOptionSets", "request.castType");
-            internalRequest.navigationProperty = request.castType;
-        }
-
-        return this.retrieveMultiple(<RetrieveMultipleRequest>internalRequest);
-    };
+    retrieveGlobalOptionSets = <T = any>(request?: RetrieveGlobalOptionSetsRequest): Promise<RetrieveMultipleResponse<T>> =>
+        Dataverse.retrieveGlobalOptionSets(request, this.#client);
 
     /**
      * Retrieves a CSDL Document Metadata
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<string>} A raw CSDL $metadata document.
      */
-    retrieveCsdlMetadata = async (request?: CsdlMetadataRequest): Promise<string> => {
-        const internalRequest: InternalRequest = !request ? {} : copyRequest(request);
-
-        internalRequest.collection = "$metadata";
-        internalRequest.functionName = "retrieveCsdlMetadata";
-
-        if (request?.addAnnotations) {
-            ErrorHelper.boolParameterCheck(request.addAnnotations, "DynamicsWebApi.retrieveCsdlMetadata", "request.addAnnotations");
-            internalRequest.includeAnnotations = "*";
-        }
-
-        const response = await this.#client.makeRequest(internalRequest);
-        return response?.data;
-    };
+    retrieveCsdlMetadata = async (request?: CsdlMetadataRequest): Promise<string> => Dataverse.retrieveCsdlMetadata(request, this.#client);
 
     /**
      * Provides a search results page.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SearchResponse<TValue>>} Search result
      */
-    search: SearchFunction = async <TValue = any>(request: string | SearchRequest): Promise<SearchResponse<TValue>> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.search", "request");
-
-        const _isObject = isObject(request);
-        const parameterName = _isObject ? "request.query.search" : "term";
-        const internalRequest: InternalRequest = _isObject ? copyObject(request) : { query: { search: request as string } };
-
-        ErrorHelper.parameterCheck(internalRequest.query, "DynamicsWebApi.search", "request.query");
-        ErrorHelper.stringParameterCheck(internalRequest.query.search, "DynamicsWebApi.search", parameterName);
-        ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, "DynamicsWebApi.search", parameterName, 100);
-
-        internalRequest.collection = "query";
-        internalRequest.functionName = "search";
-        internalRequest.method = "POST";
-        internalRequest.data = internalRequest.query;
-        internalRequest.apiConfig = this.#client.config.searchApi;
-
-        delete internalRequest.query;
-
-        const response = await this.#client.makeRequest(internalRequest);
-        return response?.data;
-    };
+    search: SearchFunction = async <TValue = any>(request: string | SearchRequest): Promise<SearchResponse<TValue>> => Dataverse.query(request, this.#client);
 
     /**
      * Provides suggestions as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SuggestResponse<TValueDocument>>} Suggestions result
      */
-    suggest: SuggestFunction = async <TValueDocument = any>(request: string | SuggestRequest): Promise<SuggestResponse<TValueDocument>> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.suggest", "request");
-
-        const _isObject = isObject(request);
-        const parameterName = _isObject ? "request.query.search" : "term";
-        const internalRequest: InternalRequest = _isObject ? copyObject(request) : { query: { search: request as string } };
-
-        ErrorHelper.parameterCheck(internalRequest.query, "DynamicsWebApi.suggest", "request.query");
-        ErrorHelper.stringParameterCheck(internalRequest.query.search, "DynamicsWebApi.suggest", parameterName);
-        ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, "DynamicsWebApi.suggest", parameterName, 100);
-
-        internalRequest.functionName = internalRequest.collection = "suggest";
-        internalRequest.method = "POST";
-        internalRequest.data = internalRequest.query;
-        internalRequest.apiConfig = this.#client.config.searchApi;
-
-        delete internalRequest.query;
-
-        const response = await this.#client.makeRequest(internalRequest);
-        return response?.data;
-    };
-
+    suggest: SuggestFunction = async <TValueDocument = any>(request: string | SuggestRequest): Promise<SuggestResponse<TValueDocument>> =>
+        Dataverse.suggest(request, this.#client);
     /**
      * Provides autocompletion of input as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<AutocompleteResponse>} Result of autocomplete
      */
-    autocomplete: AutocompleteFunction = async (request: string | AutocompleteRequest): Promise<AutocompleteResponse> => {
-        ErrorHelper.parameterCheck(request, "DynamicsWebApi.autocomplete", "request");
-
-        const _isObject = isObject(request);
-        const parameterName = _isObject ? "request.query.search" : "term";
-        const internalRequest: InternalRequest = _isObject ? copyObject(request) : { query: { search: request as string } };
-
-        if (_isObject) ErrorHelper.parameterCheck(internalRequest.query, "DynamicsWebApi.autocomplete", "request.query");
-        ErrorHelper.stringParameterCheck(internalRequest.query.search, `DynamicsWebApi.autocomplete`, parameterName);
-        ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, "DynamicsWebApi.autocomplete", parameterName, 100);
-
-        internalRequest.functionName = internalRequest.collection = "autocomplete";
-        internalRequest.method = "POST";
-        internalRequest.data = internalRequest.query;
-        internalRequest.apiConfig = this.#client.config.searchApi;
-
-        delete internalRequest.query;
-
-        const response = await this.#client.makeRequest(internalRequest);
-        return response?.data;
-    };
+    autocomplete: AutocompleteFunction = async (request: string | AutocompleteRequest): Promise<AutocompleteResponse> =>
+        Dataverse.autocomplete(request, this.#client);
 
     /**
      * Starts/executes a batch request.
      */
-    startBatch = (): void => {
-        this.#client.isBatch = true;
-        this.#client.batchRequestId = generateUUID();
-    };
+    startBatch = (): void => Dataverse.startBatch(this.#client);
 
     /**
      * Executes a batch request. Please call DynamicsWebApi.startBatch() first to start a batch request.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    executeBatch = async (request?: BatchRequest): Promise<any[]> => {
-        ErrorHelper.throwBatchNotStarted(this.#client.isBatch);
-
-        const internalRequest: InternalRequest = !request ? {} : copyRequest(request);
-
-        internalRequest.collection = "$batch";
-        internalRequest.method = "POST";
-        internalRequest.functionName = "executeBatch";
-        internalRequest.requestId = this.#client.batchRequestId;
-
-        this.#client.batchRequestId = null;
-        this.#client.isBatch = false;
-
-        const response = await this.#client.makeRequest(internalRequest);
-        return response?.data;
-    };
+    executeBatch = async (request?: BatchRequest): Promise<any[]> => Dataverse.executeBatch(request, this.#client);
 
     /**
      * Creates a new instance of DynamicsWebApi. If config is not provided, it is copied from a current instance.

@@ -18,6 +18,7 @@ export * from "./upsert";
 export * from "./delete";
 export * from "./uploadFile";
 export * from "./downloadFile";
+export * from "./executeBatch";
 
 //metadata requests
 export * from "./metadata/createEntity";
@@ -25,3 +26,22 @@ export * from "./metadata/updateEntity";
 export * from "./metadata/retrieveEntity";
 export * from "./metadata/retrieveEntities";
 export * from "./metadata/createAttribute";
+export * from "./metadata/updateAttribute";
+export * from "./metadata/retrieveAttributes";
+export * from "./metadata/retrieveAttribute";
+export * from "./metadata/createRelationship";
+export * from "./metadata/updateRelationship";
+export * from "./metadata/deleteRelationship";
+export * from "./metadata/retrieveRelationships";
+export * from "./metadata/retrieveRelationship";
+export * from "./metadata/createGlobalOptionSet";
+export * from "./metadata/updateGlobalOptionSet";
+export * from "./metadata/deleteGlobalOptionSet";
+export * from "./metadata/retrieveGlobalOptionSet";
+export * from "./metadata/retrieveGlobalOptionSets";
+export * from "./metadata/retrieveCsdlMetadata";
+
+//search api
+export * from "./search/query";
+export * from "./search/suggest";
+export * from "./search/autocomplete";

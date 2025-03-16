@@ -859,9 +859,107 @@ var init_http = __esm({
   }
 });
 
-// src/dynamics-web-api.ts
+// src/utils/Config.ts
 init_Utility();
 init_ErrorHelper();
+var getApiUrl = (serverUrl, apiConfig) => {
+  if (isRunningWithinPortals()) {
+    return new URL("_api", global.window.location.origin).toString() + "/";
+  } else {
+    if (!serverUrl) serverUrl = getClientUrl();
+    return new URL(`api/${apiConfig.path}/v${apiConfig.version}`, serverUrl).toString() + "/";
+  }
+};
+var mergeApiConfigs = (apiConfig, apiType, internalConfig) => {
+  const internalApiConfig = internalConfig[apiType];
+  if (apiConfig == null ? void 0 : apiConfig.version) {
+    ErrorHelper.stringParameterCheck(apiConfig.version, "DynamicsWebApi.setConfig", `config.${apiType}.version`);
+    internalApiConfig.version = apiConfig.version;
+  }
+  if (apiConfig == null ? void 0 : apiConfig.path) {
+    ErrorHelper.stringParameterCheck(apiConfig.path, "DynamicsWebApi.setConfig", `config.${apiType}.path`);
+    internalApiConfig.path = apiConfig.path;
+  }
+  internalApiConfig.url = getApiUrl(internalConfig.serverUrl, internalApiConfig);
+};
+var ConfigurationUtility = class {
+  static merge(internalConfig, config) {
+    if (config == null ? void 0 : config.serverUrl) {
+      ErrorHelper.stringParameterCheck(config.serverUrl, "DynamicsWebApi.setConfig", "config.serverUrl");
+      internalConfig.serverUrl = config.serverUrl;
+    }
+    mergeApiConfigs(config == null ? void 0 : config.dataApi, "dataApi", internalConfig);
+    mergeApiConfigs(config == null ? void 0 : config.searchApi, "searchApi", internalConfig);
+    if (config == null ? void 0 : config.impersonate) {
+      internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, "DynamicsWebApi.setConfig", "config.impersonate");
+    }
+    if (config == null ? void 0 : config.impersonateAAD) {
+      internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, "DynamicsWebApi.setConfig", "config.impersonateAAD");
+    }
+    if (config == null ? void 0 : config.onTokenRefresh) {
+      ErrorHelper.callbackParameterCheck(config.onTokenRefresh, "DynamicsWebApi.setConfig", "config.onTokenRefresh");
+      internalConfig.onTokenRefresh = config.onTokenRefresh;
+    }
+    if (config == null ? void 0 : config.includeAnnotations) {
+      ErrorHelper.stringParameterCheck(config.includeAnnotations, "DynamicsWebApi.setConfig", "config.includeAnnotations");
+      internalConfig.includeAnnotations = config.includeAnnotations;
+    }
+    if (config == null ? void 0 : config.timeout) {
+      ErrorHelper.numberParameterCheck(config.timeout, "DynamicsWebApi.setConfig", "config.timeout");
+      internalConfig.timeout = config.timeout;
+    }
+    if (config == null ? void 0 : config.maxPageSize) {
+      ErrorHelper.numberParameterCheck(config.maxPageSize, "DynamicsWebApi.setConfig", "config.maxPageSize");
+      internalConfig.maxPageSize = config.maxPageSize;
+    }
+    if (config == null ? void 0 : config.returnRepresentation) {
+      ErrorHelper.boolParameterCheck(config.returnRepresentation, "DynamicsWebApi.setConfig", "config.returnRepresentation");
+      internalConfig.returnRepresentation = config.returnRepresentation;
+    }
+    if (config == null ? void 0 : config.useEntityNames) {
+      ErrorHelper.boolParameterCheck(config.useEntityNames, "DynamicsWebApi.setConfig", "config.useEntityNames");
+      internalConfig.useEntityNames = config.useEntityNames;
+    }
+    if (config == null ? void 0 : config.headers) {
+      internalConfig.headers = config.headers;
+    }
+    if (config == null ? void 0 : config.proxy) {
+      ErrorHelper.parameterCheck(config.proxy, "DynamicsWebApi.setConfig", "config.proxy");
+      if (config.proxy.url) {
+        ErrorHelper.stringParameterCheck(config.proxy.url, "DynamicsWebApi.setConfig", "config.proxy.url");
+        if (config.proxy.auth) {
+          ErrorHelper.parameterCheck(config.proxy.auth, "DynamicsWebApi.setConfig", "config.proxy.auth");
+          ErrorHelper.stringParameterCheck(config.proxy.auth.username, "DynamicsWebApi.setConfig", "config.proxy.auth.username");
+          ErrorHelper.stringParameterCheck(config.proxy.auth.password, "DynamicsWebApi.setConfig", "config.proxy.auth.password");
+        }
+      }
+      internalConfig.proxy = config.proxy;
+    }
+  }
+  static default() {
+    return {
+      serverUrl: null,
+      impersonate: null,
+      impersonateAAD: null,
+      onTokenRefresh: null,
+      includeAnnotations: null,
+      maxPageSize: null,
+      returnRepresentation: null,
+      proxy: null,
+      dataApi: {
+        path: "data",
+        version: "9.2",
+        url: ""
+      },
+      searchApi: {
+        path: "search",
+        version: "1.0",
+        url: ""
+      }
+    };
+  }
+};
+ConfigurationUtility.mergeApiConfigs = mergeApiConfigs;
 
 // src/client/RequestClient.ts
 init_Utility();
@@ -1464,6 +1562,41 @@ var getCollectionName = (entityName) => {
   return findCollectionName(entityName);
 };
 
+// src/client/dataverse.ts
+var _config, _isBatch, _batchRequestId;
+var DataverseClient = class {
+  constructor(config) {
+    __privateAdd(this, _config, ConfigurationUtility.default());
+    __privateAdd(this, _isBatch, false);
+    __privateAdd(this, _batchRequestId, null);
+    this.setConfig = (config) => ConfigurationUtility.merge(__privateGet(this, _config), config);
+    this.makeRequest = (request) => {
+      request.isBatch = __privateGet(this, _isBatch);
+      if (__privateGet(this, _batchRequestId)) request.requestId = __privateGet(this, _batchRequestId);
+      return makeRequest(request, __privateGet(this, _config));
+    };
+    ConfigurationUtility.merge(__privateGet(this, _config), config);
+  }
+  get batchRequestId() {
+    return __privateGet(this, _batchRequestId);
+  }
+  set batchRequestId(value) {
+    __privateSet(this, _batchRequestId, value);
+  }
+  get config() {
+    return __privateGet(this, _config);
+  }
+  get isBatch() {
+    return __privateGet(this, _isBatch);
+  }
+  set isBatch(value) {
+    __privateSet(this, _isBatch, value);
+  }
+};
+_config = new WeakMap();
+_isBatch = new WeakMap();
+_batchRequestId = new WeakMap();
+
 // src/requests/associate.ts
 init_ErrorHelper();
 init_Utility();
@@ -1884,7 +2017,7 @@ var uploadFile = async (request, client) => {
 // src/requests/downloadFile.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME20 = "deleteRecord";
+var FUNCTION_NAME20 = "downloadFile";
 var REQUEST_NAME20 = `${LIBRARY_NAME}.${FUNCTION_NAME20}`;
 var downloadFileChunk = async (request, client, bytesDownloaded = 0, data = "") => {
   request.range = "bytes=" + bytesDownloaded + "-" + (bytesDownloaded + downloadChunkSize - 1);
@@ -1912,31 +2045,53 @@ var downloadFile = (request, client) => {
   return downloadFileChunk(internalRequest, client);
 };
 
+// src/requests/executeBatch.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME21 = "executeBatch";
+var REQUEST_NAME21 = `${LIBRARY_NAME}.${FUNCTION_NAME21}`;
+async function executeBatch(request, client) {
+  ErrorHelper.throwBatchNotStarted(client.isBatch);
+  const internalRequest = !request ? {} : copyRequest(request);
+  internalRequest.collection = "$batch";
+  internalRequest.method = "POST";
+  internalRequest.functionName = REQUEST_NAME21;
+  internalRequest.requestId = client.batchRequestId;
+  client.batchRequestId = null;
+  client.isBatch = false;
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
+function startBatch(client) {
+  client.isBatch = true;
+  client.batchRequestId = generateUUID();
+}
+
 // src/requests/metadata/createEntity.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME21 = "createEntity";
-var REQUEST_NAME21 = `${LIBRARY_NAME}.${FUNCTION_NAME21}`;
+var FUNCTION_NAME22 = "createEntity";
+var REQUEST_NAME22 = `${LIBRARY_NAME}.${FUNCTION_NAME22}`;
 var createEntity = async (request, client) => {
-  ErrorHelper.parameterCheck(request, REQUEST_NAME21, "request");
-  ErrorHelper.parameterCheck(request.data, REQUEST_NAME21, "request.data");
+  ErrorHelper.parameterCheck(request, REQUEST_NAME22, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME22, "request.data");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME21;
+  internalRequest.functionName = FUNCTION_NAME22;
   return create(internalRequest, client);
 };
 
 // src/requests/metadata/updateEntity.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME22 = "updateEntity";
-var REQUEST_NAME22 = `${LIBRARY_NAME}.${FUNCTION_NAME22}`;
+var FUNCTION_NAME23 = "updateEntity";
+var REQUEST_NAME23 = `${LIBRARY_NAME}.${FUNCTION_NAME23}`;
 var updateEntity = async (request, client) => {
-  ErrorHelper.parameterCheck(request, REQUEST_NAME22, "request");
-  ErrorHelper.parameterCheck(request.data, REQUEST_NAME22, "request.data");
+  ErrorHelper.parameterCheck(request, REQUEST_NAME23, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME23, "request.data");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME22;
+  internalRequest.functionName = FUNCTION_NAME23;
   internalRequest.key = internalRequest.data.MetadataId;
   internalRequest.method = "PUT";
   return await update(internalRequest, client);
@@ -1945,153 +2100,355 @@ var updateEntity = async (request, client) => {
 // src/requests/metadata/retrieveEntity.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME23 = "retrieveEntity";
-var REQUEST_NAME23 = `${LIBRARY_NAME}.${FUNCTION_NAME23}`;
+var FUNCTION_NAME24 = "retrieveEntity";
+var REQUEST_NAME24 = `${LIBRARY_NAME}.${FUNCTION_NAME24}`;
 var retrieveEntity = async (request, client) => {
-  ErrorHelper.parameterCheck(request, REQUEST_NAME23, "request");
-  ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME23, "request.key");
+  ErrorHelper.parameterCheck(request, REQUEST_NAME24, "request");
+  ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME24, "request.key");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
   internalRequest.functionName = "retrieveEntity";
   return await retrieve(internalRequest, client);
 };
 
-// src/utils/Config.ts
+// src/requests/metadata/retrieveEntities.ts
+init_Utility();
+var FUNCTION_NAME25 = "retrieveEntities";
+var retrieveEntities = (client, request) => {
+  const internalRequest = !request ? {} : copyRequest(request);
+  internalRequest.collection = "EntityDefinitions";
+  internalRequest.functionName = FUNCTION_NAME25;
+  return retrieveMultiple(internalRequest, client);
+};
+
+// src/requests/metadata/createAttribute.ts
 init_Utility();
 init_ErrorHelper();
-var getApiUrl = (serverUrl, apiConfig) => {
-  if (isRunningWithinPortals()) {
-    return new URL("_api", global.window.location.origin).toString() + "/";
-  } else {
-    if (!serverUrl) serverUrl = getClientUrl();
-    return new URL(`api/${apiConfig.path}/v${apiConfig.version}`, serverUrl).toString() + "/";
-  }
+var FUNCTION_NAME26 = "createAttribute";
+var REQUEST_NAME25 = `${LIBRARY_NAME}.${FUNCTION_NAME26}`;
+var createAttribute = (request, client) => {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME25, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME25, "request.data");
+  ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME25, "request.entityKey");
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "EntityDefinitions";
+  internalRequest.functionName = FUNCTION_NAME26;
+  internalRequest.navigationProperty = "Attributes";
+  internalRequest.key = request.entityKey;
+  return create(internalRequest, client);
 };
-var mergeApiConfigs = (apiConfig, apiType, internalConfig) => {
-  const internalApiConfig = internalConfig[apiType];
-  if (apiConfig == null ? void 0 : apiConfig.version) {
-    ErrorHelper.stringParameterCheck(apiConfig.version, "DynamicsWebApi.setConfig", `config.${apiType}.version`);
-    internalApiConfig.version = apiConfig.version;
-  }
-  if (apiConfig == null ? void 0 : apiConfig.path) {
-    ErrorHelper.stringParameterCheck(apiConfig.path, "DynamicsWebApi.setConfig", `config.${apiType}.path`);
-    internalApiConfig.path = apiConfig.path;
-  }
-  internalApiConfig.url = getApiUrl(internalConfig.serverUrl, internalApiConfig);
-};
-var ConfigurationUtility = class {
-  static merge(internalConfig, config) {
-    if (config == null ? void 0 : config.serverUrl) {
-      ErrorHelper.stringParameterCheck(config.serverUrl, "DynamicsWebApi.setConfig", "config.serverUrl");
-      internalConfig.serverUrl = config.serverUrl;
-    }
-    mergeApiConfigs(config == null ? void 0 : config.dataApi, "dataApi", internalConfig);
-    mergeApiConfigs(config == null ? void 0 : config.searchApi, "searchApi", internalConfig);
-    if (config == null ? void 0 : config.impersonate) {
-      internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, "DynamicsWebApi.setConfig", "config.impersonate");
-    }
-    if (config == null ? void 0 : config.impersonateAAD) {
-      internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, "DynamicsWebApi.setConfig", "config.impersonateAAD");
-    }
-    if (config == null ? void 0 : config.onTokenRefresh) {
-      ErrorHelper.callbackParameterCheck(config.onTokenRefresh, "DynamicsWebApi.setConfig", "config.onTokenRefresh");
-      internalConfig.onTokenRefresh = config.onTokenRefresh;
-    }
-    if (config == null ? void 0 : config.includeAnnotations) {
-      ErrorHelper.stringParameterCheck(config.includeAnnotations, "DynamicsWebApi.setConfig", "config.includeAnnotations");
-      internalConfig.includeAnnotations = config.includeAnnotations;
-    }
-    if (config == null ? void 0 : config.timeout) {
-      ErrorHelper.numberParameterCheck(config.timeout, "DynamicsWebApi.setConfig", "config.timeout");
-      internalConfig.timeout = config.timeout;
-    }
-    if (config == null ? void 0 : config.maxPageSize) {
-      ErrorHelper.numberParameterCheck(config.maxPageSize, "DynamicsWebApi.setConfig", "config.maxPageSize");
-      internalConfig.maxPageSize = config.maxPageSize;
-    }
-    if (config == null ? void 0 : config.returnRepresentation) {
-      ErrorHelper.boolParameterCheck(config.returnRepresentation, "DynamicsWebApi.setConfig", "config.returnRepresentation");
-      internalConfig.returnRepresentation = config.returnRepresentation;
-    }
-    if (config == null ? void 0 : config.useEntityNames) {
-      ErrorHelper.boolParameterCheck(config.useEntityNames, "DynamicsWebApi.setConfig", "config.useEntityNames");
-      internalConfig.useEntityNames = config.useEntityNames;
-    }
-    if (config == null ? void 0 : config.headers) {
-      internalConfig.headers = config.headers;
-    }
-    if (config == null ? void 0 : config.proxy) {
-      ErrorHelper.parameterCheck(config.proxy, "DynamicsWebApi.setConfig", "config.proxy");
-      if (config.proxy.url) {
-        ErrorHelper.stringParameterCheck(config.proxy.url, "DynamicsWebApi.setConfig", "config.proxy.url");
-        if (config.proxy.auth) {
-          ErrorHelper.parameterCheck(config.proxy.auth, "DynamicsWebApi.setConfig", "config.proxy.auth");
-          ErrorHelper.stringParameterCheck(config.proxy.auth.username, "DynamicsWebApi.setConfig", "config.proxy.auth.username");
-          ErrorHelper.stringParameterCheck(config.proxy.auth.password, "DynamicsWebApi.setConfig", "config.proxy.auth.password");
-        }
-      }
-      internalConfig.proxy = config.proxy;
-    }
-  }
-  static default() {
-    return {
-      serverUrl: null,
-      impersonate: null,
-      impersonateAAD: null,
-      onTokenRefresh: null,
-      includeAnnotations: null,
-      maxPageSize: null,
-      returnRepresentation: null,
-      proxy: null,
-      dataApi: {
-        path: "data",
-        version: "9.2",
-        url: ""
-      },
-      searchApi: {
-        path: "search",
-        version: "1.0",
-        url: ""
-      }
-    };
-  }
-};
-ConfigurationUtility.mergeApiConfigs = mergeApiConfigs;
 
-// src/client/dataverse.ts
-var _config, _isBatch, _batchRequestId;
-var DataverseClient = class {
-  constructor(config) {
-    __privateAdd(this, _config, ConfigurationUtility.default());
-    __privateAdd(this, _isBatch, false);
-    __privateAdd(this, _batchRequestId, null);
-    this.setConfig = (config) => ConfigurationUtility.merge(__privateGet(this, _config), config);
-    this.makeRequest = (request) => {
-      request.isBatch = __privateGet(this, _isBatch);
-      if (__privateGet(this, _batchRequestId)) request.requestId = __privateGet(this, _batchRequestId);
-      return makeRequest(request, __privateGet(this, _config));
-    };
-    ConfigurationUtility.merge(__privateGet(this, _config), config);
-  }
-  get batchRequestId() {
-    return __privateGet(this, _batchRequestId);
-  }
-  set batchRequestId(value) {
-    __privateSet(this, _batchRequestId, value);
-  }
-  get config() {
-    return __privateGet(this, _config);
-  }
-  get isBatch() {
-    return __privateGet(this, _isBatch);
-  }
-  set isBatch(value) {
-    __privateSet(this, _isBatch, value);
-  }
+// src/requests/metadata/updateAttribute.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME27 = "updateAttribute";
+var REQUEST_NAME26 = `${LIBRARY_NAME}.${FUNCTION_NAME27}`;
+var updateAttribute = (request, client) => {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME26, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME26, "request.data");
+  ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME26, "request.entityKey");
+  ErrorHelper.guidParameterCheck(request.data.MetadataId, REQUEST_NAME26, "request.data.MetadataId");
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "EntityDefinitions";
+  internalRequest.functionName = FUNCTION_NAME27;
+  internalRequest.navigationProperty = "Attributes";
+  internalRequest.navigationPropertyKey = request.data.MetadataId;
+  internalRequest.metadataAttributeType = request.castType;
+  internalRequest.key = request.entityKey;
+  internalRequest.method = "PUT";
+  return update(internalRequest, client);
 };
-_config = new WeakMap();
-_isBatch = new WeakMap();
-_batchRequestId = new WeakMap();
+
+// src/requests/metadata/retrieveAttributes.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME28 = "retrieveAttributes";
+var REQUEST_NAME27 = `${LIBRARY_NAME}.${FUNCTION_NAME28}`;
+var retrieveAttributes = (request, client) => {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME27, "request");
+  ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME27, "request.entityKey");
+  if (request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME27, "request.castType");
+  }
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "EntityDefinitions";
+  internalRequest.functionName = FUNCTION_NAME28;
+  internalRequest.navigationProperty = "Attributes";
+  internalRequest.key = request.entityKey;
+  internalRequest.metadataAttributeType = request.castType;
+  return retrieveMultiple(internalRequest, client);
+};
+
+// src/requests/metadata/retrieveAttribute.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME29 = "retrieveAttributes";
+var REQUEST_NAME28 = `${LIBRARY_NAME}.${FUNCTION_NAME29}`;
+var retrieveAttribute = (request, client) => {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME28, "request");
+  ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME28, "request.entityKey");
+  ErrorHelper.keyParameterCheck(request.attributeKey, REQUEST_NAME28, "request.attributeKey");
+  if (request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME28, "request.castType");
+  }
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "EntityDefinitions";
+  internalRequest.navigationProperty = "Attributes";
+  internalRequest.navigationPropertyKey = request.attributeKey;
+  internalRequest.metadataAttributeType = request.castType;
+  internalRequest.key = request.entityKey;
+  internalRequest.functionName = FUNCTION_NAME29;
+  return retrieve(internalRequest, client);
+};
+
+// src/requests/metadata/createRelationship.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME30 = "createRelationship";
+var REQUEST_NAME29 = `${LIBRARY_NAME}.${FUNCTION_NAME30}`;
+var createRelationship = (request, client) => {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME29, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME29, "request.data");
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "RelationshipDefinitions";
+  internalRequest.functionName = FUNCTION_NAME30;
+  return create(internalRequest, client);
+};
+
+// src/requests/metadata/updateRelationship.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME31 = "updateRelationship";
+var REQUEST_NAME30 = `${LIBRARY_NAME}.${FUNCTION_NAME31}`;
+function updateRelationship(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME30, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME30, "request.data");
+  ErrorHelper.guidParameterCheck(request.data.MetadataId, REQUEST_NAME30, "request.data.MetadataId");
+  if (request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME30, "request.castType");
+  }
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "RelationshipDefinitions";
+  internalRequest.key = request.data.MetadataId;
+  internalRequest.navigationProperty = request.castType;
+  internalRequest.functionName = FUNCTION_NAME31;
+  internalRequest.method = "PUT";
+  return update(internalRequest, client);
+}
+
+// src/requests/metadata/deleteRelationship.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME32 = "deleteRelationship";
+var REQUEST_NAME31 = `${LIBRARY_NAME}.${FUNCTION_NAME32}`;
+async function deleteRelationship(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME31, "request");
+  ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME31, "request.key");
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "RelationshipDefinitions";
+  internalRequest.functionName = FUNCTION_NAME32;
+  return deleteRecord(internalRequest, client);
+}
+
+// src/requests/metadata/retrieveRelationships.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME33 = "retrieveRelationships";
+var REQUEST_NAME32 = `DynamicsWebApi.${FUNCTION_NAME33}`;
+async function retrieveRelationships(request, client) {
+  const internalRequest = !request ? {} : copyRequest(request);
+  internalRequest.collection = "RelationshipDefinitions";
+  internalRequest.functionName = FUNCTION_NAME33;
+  if (request) {
+    if (request.castType) {
+      ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME32, "request.castType");
+      internalRequest.navigationProperty = request.castType;
+    }
+  }
+  return retrieveMultiple(internalRequest, client);
+}
+
+// src/requests/metadata/retrieveRelationship.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME34 = "retrieveRelationship";
+var REQUEST_NAME33 = `DynamicsWebApi.${FUNCTION_NAME34}`;
+async function retrieveRelationship(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME33, "request");
+  ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME33, "request.key");
+  if (request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME33, "request.castType");
+  }
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "RelationshipDefinitions";
+  internalRequest.navigationProperty = request.castType;
+  internalRequest.functionName = FUNCTION_NAME34;
+  return retrieve(internalRequest, client);
+}
+
+// src/requests/metadata/createGlobalOptionSet.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME35 = "createGlobalOptionSet";
+var REQUEST_NAME34 = `DynamicsWebApi.${FUNCTION_NAME35}`;
+async function createGlobalOptionSet(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME34, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME34, "request.data");
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "GlobalOptionSetDefinitions";
+  internalRequest.functionName = FUNCTION_NAME35;
+  return create(internalRequest, client);
+}
+
+// src/requests/metadata/updateGlobalOptionSet.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME36 = "updateGlobalOptionSet";
+var REQUEST_NAME35 = `DynamicsWebApi.${FUNCTION_NAME36}`;
+async function updateGlobalOptionSet(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME35, "request");
+  ErrorHelper.parameterCheck(request.data, REQUEST_NAME35, "request.data");
+  ErrorHelper.guidParameterCheck(request.data.MetadataId, REQUEST_NAME35, "request.data.MetadataId");
+  if (request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME35, "request.castType");
+  }
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "GlobalOptionSetDefinitions";
+  internalRequest.key = request.data.MetadataId;
+  internalRequest.functionName = FUNCTION_NAME36;
+  internalRequest.method = "PUT";
+  return update(internalRequest, client);
+}
+
+// src/requests/metadata/deleteGlobalOptionSet.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME37 = "deleteGlobalOptionSet";
+var REQUEST_NAME36 = `DynamicsWebApi.${FUNCTION_NAME37}`;
+async function deleteGlobalOptionSet(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME36, "request");
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "GlobalOptionSetDefinitions";
+  internalRequest.functionName = FUNCTION_NAME37;
+  return deleteRecord(internalRequest, client);
+}
+
+// src/requests/metadata/retrieveGlobalOptionSet.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME38 = "retrieveGlobalOptionSet";
+var REQUEST_NAME37 = `DynamicsWebApi.${FUNCTION_NAME38}`;
+async function retrieveGlobalOptionSet(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME37, "request");
+  if (request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME37, "request.castType");
+  }
+  const internalRequest = copyRequest(request);
+  internalRequest.collection = "GlobalOptionSetDefinitions";
+  internalRequest.navigationProperty = request.castType;
+  internalRequest.functionName = FUNCTION_NAME38;
+  return retrieve(internalRequest, client);
+}
+
+// src/requests/metadata/retrieveGlobalOptionSets.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME39 = "retrieveGlobalOptionSets";
+var REQUEST_NAME38 = `DynamicsWebApi.${FUNCTION_NAME39}`;
+async function retrieveGlobalOptionSets(request, client) {
+  const internalRequest = !request ? {} : copyRequest(request);
+  internalRequest.collection = "GlobalOptionSetDefinitions";
+  internalRequest.functionName = FUNCTION_NAME39;
+  if (request == null ? void 0 : request.castType) {
+    ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME38, "request.castType");
+    internalRequest.navigationProperty = request.castType;
+  }
+  return retrieveMultiple(internalRequest, client);
+}
+
+// src/requests/metadata/retrieveCsdlMetadata.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME40 = "retrieveCsdlMetadata";
+var REQUEST_NAME39 = `DynamicsWebApi.${FUNCTION_NAME40}`;
+async function retrieveCsdlMetadata(request, client) {
+  const internalRequest = !request ? {} : copyRequest(request);
+  internalRequest.collection = "$metadata";
+  internalRequest.functionName = FUNCTION_NAME40;
+  if (request == null ? void 0 : request.addAnnotations) {
+    ErrorHelper.boolParameterCheck(request.addAnnotations, REQUEST_NAME39, "request.addAnnotations");
+    internalRequest.includeAnnotations = "*";
+  }
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
+
+// src/requests/search/query.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME41 = "search";
+var REQUEST_NAME40 = `${LIBRARY_NAME}.${FUNCTION_NAME41}`;
+async function query(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME40, "request");
+  const _isObject = isObject(request);
+  const parameterName = _isObject ? "request.query.search" : "term";
+  const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
+  ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME40, "request.query");
+  ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME40, parameterName);
+  ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, REQUEST_NAME40, parameterName, 100);
+  internalRequest.collection = "query";
+  internalRequest.functionName = FUNCTION_NAME41;
+  internalRequest.method = "POST";
+  internalRequest.data = internalRequest.query;
+  internalRequest.apiConfig = client.config.searchApi;
+  delete internalRequest.query;
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
+
+// src/requests/search/suggest.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME42 = "suggest";
+var REQUEST_NAME41 = `${LIBRARY_NAME}.${FUNCTION_NAME42}`;
+async function suggest(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME41, "request");
+  const _isObject = isObject(request);
+  const parameterName = _isObject ? "request.query.search" : "term";
+  const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
+  ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME41, "request.query");
+  ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME41, parameterName);
+  ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, REQUEST_NAME41, parameterName, 100);
+  internalRequest.functionName = internalRequest.collection = "suggest";
+  internalRequest.method = "POST";
+  internalRequest.data = internalRequest.query;
+  internalRequest.apiConfig = client.config.searchApi;
+  delete internalRequest.query;
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
+
+// src/requests/search/autocomplete.ts
+init_Utility();
+init_ErrorHelper();
+var FUNCTION_NAME43 = "autocomplete";
+var REQUEST_NAME42 = `${LIBRARY_NAME}.${FUNCTION_NAME43}`;
+async function autocomplete(request, client) {
+  ErrorHelper.parameterCheck(request, REQUEST_NAME42, "request");
+  const _isObject = isObject(request);
+  const parameterName = _isObject ? "request.query.search" : "term";
+  const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
+  if (_isObject) ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME42, "request.query");
+  ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME42, parameterName);
+  ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, REQUEST_NAME42, parameterName, 100);
+  internalRequest.functionName = internalRequest.collection = "autocomplete";
+  internalRequest.method = "POST";
+  internalRequest.data = internalRequest.query;
+  internalRequest.apiConfig = client.config.searchApi;
+  delete internalRequest.query;
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
 
 // src/dynamics-web-api.ts
 var _client;
@@ -2300,364 +2657,139 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveEntities = (request) => {
-      const internalRequest = !request ? {} : copyRequest(request);
-      internalRequest.collection = "EntityDefinitions";
-      internalRequest.functionName = "retrieveEntities";
-      return this.retrieveMultiple(internalRequest);
-    };
+    this.retrieveEntities = (request) => retrieveEntities(__privateGet(this, _client), request);
     /**
      * Sends an asynchronous request to create an attribute.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.createAttribute = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.createAttribute", "request");
-      ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.createAttribute", "request.data");
-      ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.createAttribute", "request.entityKey");
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "EntityDefinitions";
-      internalRequest.functionName = "retrieveEntity";
-      internalRequest.navigationProperty = "Attributes";
-      internalRequest.key = request.entityKey;
-      return this.create(internalRequest);
-    };
+    this.createAttribute = (request) => createAttribute(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to update an attribute.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.updateAttribute = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.updateAttribute", "request");
-      ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.updateAttribute", "request.data");
-      ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.updateAttribute", "request.entityKey");
-      ErrorHelper.guidParameterCheck(request.data.MetadataId, "DynamicsWebApi.updateAttribute", "request.data.MetadataId");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.updateAttribute", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "EntityDefinitions";
-      internalRequest.navigationProperty = "Attributes";
-      internalRequest.navigationPropertyKey = request.data.MetadataId;
-      internalRequest.metadataAttributeType = request.castType;
-      internalRequest.key = request.entityKey;
-      internalRequest.functionName = "updateAttribute";
-      internalRequest.method = "PUT";
-      return this.update(internalRequest);
-    };
+    this.updateAttribute = (request) => updateAttribute(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to retrieve attribute metadata for a specified entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveAttributes = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveAttributes", "request");
-      ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.retrieveAttributes", "request.entityKey");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveAttributes", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "EntityDefinitions";
-      internalRequest.navigationProperty = "Attributes";
-      internalRequest.metadataAttributeType = request.castType;
-      internalRequest.key = request.entityKey;
-      internalRequest.functionName = "retrieveAttributes";
-      return this.retrieveMultiple(internalRequest);
-    };
+    this.retrieveAttributes = (request) => retrieveAttributes(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to retrieve a specific attribute metadata for a specified entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveAttribute = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveAttributes", "request");
-      ErrorHelper.keyParameterCheck(request.entityKey, "DynamicsWebApi.retrieveAttribute", "request.entityKey");
-      ErrorHelper.keyParameterCheck(request.attributeKey, "DynamicsWebApi.retrieveAttribute", "request.attributeKey");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveAttribute", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "EntityDefinitions";
-      internalRequest.navigationProperty = "Attributes";
-      internalRequest.navigationPropertyKey = request.attributeKey;
-      internalRequest.metadataAttributeType = request.castType;
-      internalRequest.key = request.entityKey;
-      internalRequest.functionName = "retrieveAttribute";
-      return this.retrieve(internalRequest);
-    };
+    this.retrieveAttribute = (request) => retrieveAttribute(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to create a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.createRelationship = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.createRelationship", "request");
-      ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.createRelationship", "request.data");
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "RelationshipDefinitions";
-      internalRequest.functionName = "createRelationship";
-      return this.create(internalRequest);
-    };
+    this.createRelationship = (request) => createRelationship(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to update a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.updateRelationship = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.updateRelationship", "request");
-      ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.updateRelationship", "request.data");
-      ErrorHelper.guidParameterCheck(request.data.MetadataId, "DynamicsWebApi.updateRelationship", "request.data.MetadataId");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.updateRelationship", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "RelationshipDefinitions";
-      internalRequest.key = request.data.MetadataId;
-      internalRequest.navigationProperty = request.castType;
-      internalRequest.functionName = "updateRelationship";
-      internalRequest.method = "PUT";
-      return this.update(internalRequest);
-    };
+    this.updateRelationship = (request) => updateRelationship(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to delete a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.deleteRelationship = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.deleteRelationship", "request");
-      ErrorHelper.keyParameterCheck(request.key, "DynamicsWebApi.deleteRelationship", "request.key");
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "RelationshipDefinitions";
-      internalRequest.functionName = "deleteRelationship";
-      return this.deleteRecord(internalRequest);
-    };
+    this.deleteRelationship = (request) => deleteRelationship(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to retrieve relationship definitions.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveRelationships = (request) => {
-      const internalRequest = !request ? {} : copyRequest(request);
-      internalRequest.collection = "RelationshipDefinitions";
-      internalRequest.functionName = "retrieveRelationships";
-      if (request) {
-        if (request.castType) {
-          ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveRelationships", "request.castType");
-          internalRequest.navigationProperty = request.castType;
-        }
-      }
-      return this.retrieveMultiple(internalRequest);
-    };
+    this.retrieveRelationships = (request) => retrieveRelationships(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to retrieve a specific relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveRelationship = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveRelationship", "request");
-      ErrorHelper.keyParameterCheck(request.key, "DynamicsWebApi.retrieveRelationship", "request.key");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveRelationship", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "RelationshipDefinitions";
-      internalRequest.navigationProperty = request.castType;
-      internalRequest.functionName = "retrieveRelationship";
-      return this.retrieve(internalRequest);
-    };
+    this.retrieveRelationship = (request) => retrieveRelationship(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to create a Global Option Set definition
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.createGlobalOptionSet = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.createGlobalOptionSet", "request");
-      ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.createGlobalOptionSet", "request.data");
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "GlobalOptionSetDefinitions";
-      internalRequest.functionName = "createGlobalOptionSet";
-      return this.create(internalRequest);
-    };
+    this.createGlobalOptionSet = (request) => createGlobalOptionSet(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to update a Global Option Set.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.updateGlobalOptionSet = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.updateGlobalOptionSet", "request");
-      ErrorHelper.parameterCheck(request.data, "DynamicsWebApi.updateGlobalOptionSet", "request.data");
-      ErrorHelper.guidParameterCheck(request.data.MetadataId, "DynamicsWebApi.updateGlobalOptionSet", "request.data.MetadataId");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.updateGlobalOptionSet", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "GlobalOptionSetDefinitions";
-      internalRequest.key = request.data.MetadataId;
-      internalRequest.functionName = "updateGlobalOptionSet";
-      internalRequest.method = "PUT";
-      return this.update(internalRequest);
-    };
+    this.updateGlobalOptionSet = (request) => updateGlobalOptionSet(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to delete a Global Option Set.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.deleteGlobalOptionSet = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.deleteGlobalOptionSet", "request");
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "GlobalOptionSetDefinitions";
-      internalRequest.functionName = "deleteGlobalOptionSet";
-      return this.deleteRecord(internalRequest);
-    };
+    this.deleteGlobalOptionSet = (request) => deleteGlobalOptionSet(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to retrieve Global Option Set definitions.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveGlobalOptionSet = (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.retrieveGlobalOptionSet", "request");
-      if (request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveGlobalOptionSet", "request.castType");
-      }
-      const internalRequest = copyRequest(request);
-      internalRequest.collection = "GlobalOptionSetDefinitions";
-      internalRequest.navigationProperty = request.castType;
-      internalRequest.functionName = "retrieveGlobalOptionSet";
-      return this.retrieve(internalRequest);
-    };
+    this.retrieveGlobalOptionSet = (request) => retrieveGlobalOptionSet(request, __privateGet(this, _client));
     /**
      * Sends an asynchronous request to retrieve Global Option Set definitions.
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.retrieveGlobalOptionSets = (request) => {
-      const internalRequest = !request ? {} : copyRequest(request);
-      internalRequest.collection = "GlobalOptionSetDefinitions";
-      internalRequest.functionName = "retrieveGlobalOptionSets";
-      if (request == null ? void 0 : request.castType) {
-        ErrorHelper.stringParameterCheck(request.castType, "DynamicsWebApi.retrieveGlobalOptionSets", "request.castType");
-        internalRequest.navigationProperty = request.castType;
-      }
-      return this.retrieveMultiple(internalRequest);
-    };
+    this.retrieveGlobalOptionSets = (request) => retrieveGlobalOptionSets(request, __privateGet(this, _client));
     /**
      * Retrieves a CSDL Document Metadata
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<string>} A raw CSDL $metadata document.
      */
-    this.retrieveCsdlMetadata = async (request) => {
-      const internalRequest = !request ? {} : copyRequest(request);
-      internalRequest.collection = "$metadata";
-      internalRequest.functionName = "retrieveCsdlMetadata";
-      if (request == null ? void 0 : request.addAnnotations) {
-        ErrorHelper.boolParameterCheck(request.addAnnotations, "DynamicsWebApi.retrieveCsdlMetadata", "request.addAnnotations");
-        internalRequest.includeAnnotations = "*";
-      }
-      const response = await __privateGet(this, _client).makeRequest(internalRequest);
-      return response == null ? void 0 : response.data;
-    };
+    this.retrieveCsdlMetadata = async (request) => retrieveCsdlMetadata(request, __privateGet(this, _client));
     /**
      * Provides a search results page.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SearchResponse<TValue>>} Search result
      */
-    this.search = async (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.search", "request");
-      const _isObject = isObject(request);
-      const parameterName = _isObject ? "request.query.search" : "term";
-      const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
-      ErrorHelper.parameterCheck(internalRequest.query, "DynamicsWebApi.search", "request.query");
-      ErrorHelper.stringParameterCheck(internalRequest.query.search, "DynamicsWebApi.search", parameterName);
-      ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, "DynamicsWebApi.search", parameterName, 100);
-      internalRequest.collection = "query";
-      internalRequest.functionName = "search";
-      internalRequest.method = "POST";
-      internalRequest.data = internalRequest.query;
-      internalRequest.apiConfig = __privateGet(this, _client).config.searchApi;
-      delete internalRequest.query;
-      const response = await __privateGet(this, _client).makeRequest(internalRequest);
-      return response == null ? void 0 : response.data;
-    };
+    this.search = async (request) => query(request, __privateGet(this, _client));
     /**
      * Provides suggestions as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SuggestResponse<TValueDocument>>} Suggestions result
      */
-    this.suggest = async (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.suggest", "request");
-      const _isObject = isObject(request);
-      const parameterName = _isObject ? "request.query.search" : "term";
-      const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
-      ErrorHelper.parameterCheck(internalRequest.query, "DynamicsWebApi.suggest", "request.query");
-      ErrorHelper.stringParameterCheck(internalRequest.query.search, "DynamicsWebApi.suggest", parameterName);
-      ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, "DynamicsWebApi.suggest", parameterName, 100);
-      internalRequest.functionName = internalRequest.collection = "suggest";
-      internalRequest.method = "POST";
-      internalRequest.data = internalRequest.query;
-      internalRequest.apiConfig = __privateGet(this, _client).config.searchApi;
-      delete internalRequest.query;
-      const response = await __privateGet(this, _client).makeRequest(internalRequest);
-      return response == null ? void 0 : response.data;
-    };
+    this.suggest = async (request) => suggest(request, __privateGet(this, _client));
     /**
      * Provides autocompletion of input as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<AutocompleteResponse>} Result of autocomplete
      */
-    this.autocomplete = async (request) => {
-      ErrorHelper.parameterCheck(request, "DynamicsWebApi.autocomplete", "request");
-      const _isObject = isObject(request);
-      const parameterName = _isObject ? "request.query.search" : "term";
-      const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
-      if (_isObject) ErrorHelper.parameterCheck(internalRequest.query, "DynamicsWebApi.autocomplete", "request.query");
-      ErrorHelper.stringParameterCheck(internalRequest.query.search, `DynamicsWebApi.autocomplete`, parameterName);
-      ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, "DynamicsWebApi.autocomplete", parameterName, 100);
-      internalRequest.functionName = internalRequest.collection = "autocomplete";
-      internalRequest.method = "POST";
-      internalRequest.data = internalRequest.query;
-      internalRequest.apiConfig = __privateGet(this, _client).config.searchApi;
-      delete internalRequest.query;
-      const response = await __privateGet(this, _client).makeRequest(internalRequest);
-      return response == null ? void 0 : response.data;
-    };
+    this.autocomplete = async (request) => autocomplete(request, __privateGet(this, _client));
     /**
      * Starts/executes a batch request.
      */
-    this.startBatch = () => {
-      __privateGet(this, _client).isBatch = true;
-      __privateGet(this, _client).batchRequestId = generateUUID();
-    };
+    this.startBatch = () => startBatch(__privateGet(this, _client));
     /**
      * Executes a batch request. Please call DynamicsWebApi.startBatch() first to start a batch request.
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
      */
-    this.executeBatch = async (request) => {
-      ErrorHelper.throwBatchNotStarted(__privateGet(this, _client).isBatch);
-      const internalRequest = !request ? {} : copyRequest(request);
-      internalRequest.collection = "$batch";
-      internalRequest.method = "POST";
-      internalRequest.functionName = "executeBatch";
-      internalRequest.requestId = __privateGet(this, _client).batchRequestId;
-      __privateGet(this, _client).batchRequestId = null;
-      __privateGet(this, _client).isBatch = false;
-      const response = await __privateGet(this, _client).makeRequest(internalRequest);
-      return response == null ? void 0 : response.data;
-    };
+    this.executeBatch = async (request) => executeBatch(request, __privateGet(this, _client));
     /**
      * Creates a new instance of DynamicsWebApi. If config is not provided, it is copied from a current instance.
      *
