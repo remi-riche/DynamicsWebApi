@@ -1,10 +1,11 @@
 import type * as Core from "../types";
+import type { AccessToken } from "../dynamics-web-api";
+import type { InternalConfig } from "../utils/Config";
 import { generateUUID, isRunningWithinPortals, isNull } from "../utils/Utility";
-import { InternalConfig } from "../utils/Config";
-import * as RequestUtility from "../utils/Request";
-import { DynamicsWebApiError, ErrorHelper } from "../helpers/ErrorHelper";
+import * as EntityMapper from "./helpers/entityNameMapper";
 import { executeRequest } from "./helpers/executeRequest";
-import { AccessToken } from "../dynamics-web-api";
+import { DynamicsWebApiError, ErrorHelper } from "../helpers/ErrorHelper";
+import { composeRequest, convertToBatch, processData, setStandardHeaders } from "./request";
 
 const _addResponseParams = (requestId: string, responseParams: Record<string, any>) => {
     if (_responseParseParams[requestId]) _responseParseParams[requestId].push(responseParams);
@@ -54,11 +55,11 @@ const _isEntityNameException = (entityName: string): boolean => {
 };
 
 const _getCollectionNames = async (entityName: string, config: InternalConfig): Promise<string | null | undefined> => {
-    if (!isNull(RequestUtility.entityNames)) {
-        return RequestUtility.findCollectionName(entityName) || entityName;
+    if (!isNull(EntityMapper.entityNames)) {
+        return EntityMapper.findCollectionName(entityName) || entityName;
     }
 
-    const request = RequestUtility.compose(
+    const request = composeRequest(
         {
             method: "GET",
             collection: "EntityDefinitions",
@@ -70,12 +71,12 @@ const _getCollectionNames = async (entityName: string, config: InternalConfig): 
     );
 
     const result = await _runRequest(request, config);
-    RequestUtility.setEntityNames({});
+    EntityMapper.setEntityNames({});
     for (let i = 0; i < result.data.value.length; i++) {
-        RequestUtility.entityNames![result.data.value[i].LogicalName] = result.data.value[i].EntitySetName;
+        EntityMapper.entityNames![result.data.value[i].LogicalName] = result.data.value[i].EntitySetName;
     }
 
-    return RequestUtility.findCollectionName(entityName) || entityName;
+    return EntityMapper.findCollectionName(entityName) || entityName;
 };
 
 const _checkCollectionName = async (entityName: string | null | undefined, config: InternalConfig): Promise<string | null | undefined> => {
@@ -120,7 +121,7 @@ export const sendRequest = async (request: Core.InternalRequest, config: Interna
 
         if (!batchRequest) throw ErrorHelper.batchIsEmpty();
 
-        const batchResult = RequestUtility.convertToBatch(batchRequest, config, request);
+        const batchResult = convertToBatch(batchRequest, config, request);
 
         processedData = batchResult.body;
         request.headers = { ...batchResult.headers, ...request.headers };
@@ -128,9 +129,9 @@ export const sendRequest = async (request: Core.InternalRequest, config: Interna
         //clear an array of requests
         delete _batchRequestCollection[request.requestId];
     } else {
-        processedData = !isBatchConverted ? RequestUtility.processData(request.data, config) : request.data;
+        processedData = !isBatchConverted ? processData(request.data, config) : request.data;
 
-        if (!isBatchConverted) request.headers = RequestUtility.setStandardHeaders(request.headers);
+        if (!isBatchConverted) request.headers = setStandardHeaders(request.headers);
     }
 
     if (config.impersonate && !request.headers!["MSCRMCallerID"]) {
@@ -183,12 +184,12 @@ export const makeRequest = async (request: Core.InternalRequest, config: Interna
         const collectionName = await _checkCollectionName(request.collection, config);
 
         request.collection = collectionName;
-        RequestUtility.compose(request, config);
+        composeRequest(request, config);
         request.responseParameters.convertedToBatch = false;
 
         //the URL contains more characters than max possible limit, convert the request to a batch request
         if (request.path!.length > 2000) {
-            const batchRequest = RequestUtility.convertToBatch([request], config);
+            const batchRequest = convertToBatch([request], config);
 
             //#175 authorization header must be copied as well.
             //todo: is it the only one that needs to be copied?
@@ -207,18 +208,18 @@ export const makeRequest = async (request: Core.InternalRequest, config: Interna
     }
 
     //no need to make a request to web api if it's a part of batch
-    RequestUtility.compose(request, config);
+    composeRequest(request, config);
     //add response parameters to parse
     _addResponseParams(request.requestId!, request.responseParameters);
     _addRequestToBatchCollection(request.requestId!, request);
 };
 
 export const _clearTestData = (): void => {
-    RequestUtility.setEntityNames(null);
+    EntityMapper.setEntityNames(null);
     _responseParseParams = {};
     _batchRequestCollection = {};
 };
 
 export const getCollectionName = (entityName: string): string | null => {
-    return RequestUtility.findCollectionName(entityName);
+    return EntityMapper.findCollectionName(entityName);
 };

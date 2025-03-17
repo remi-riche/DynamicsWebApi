@@ -1,6 +1,6 @@
 import type { IDataverseClient } from "../../client/dataverse";
-import type { SearchRequest, SearchResponse } from "../../dynamics-web-api";
-import { copyObject, isObject } from "../../utils/Utility";
+import type { QueryRequest, SearchResponse } from "../../dynamics-web-api";
+import { copyObject } from "../../utils/Utility";
 import { ErrorHelper } from "../../helpers/ErrorHelper";
 import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
@@ -8,12 +8,12 @@ import { LIBRARY_NAME } from "../constants";
 const FUNCTION_NAME = "search";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
 
-export async function query<TValue = any>(request: string | SearchRequest, client: IDataverseClient): Promise<SearchResponse<TValue>> {
+export async function query<TValue = any>(request: string | QueryRequest, client: IDataverseClient): Promise<SearchResponse<TValue>> {
     ErrorHelper.parameterCheck(request, REQUEST_NAME, "request");
 
-    const _isObject = isObject(request);
+    const _isObject = typeof request !== "string";
     const parameterName = _isObject ? "request.query.search" : "term";
-    const internalRequest: InternalRequest = _isObject ? copyObject(request) : { query: { search: request as string } };
+    const internalRequest: InternalRequest = _isObject ? copyObject(request) : { query: { search: request } };
 
     ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME, "request.query");
     ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME, parameterName);
@@ -30,3 +30,4 @@ export async function query<TValue = any>(request: string | SearchRequest, clien
     const response = await client.makeRequest(internalRequest);
     return response?.data;
 }
+

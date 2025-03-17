@@ -6,8 +6,9 @@ import * as RequestClient from "../src/client/RequestClient";
 import { InternalConfig } from "../src/utils/Config";
 import * as Core from "../src/types";
 import * as Regex from "../src/helpers/Regex";
-import * as RequestUtility from "../src/utils/Request";
+import * as RequestUtility from "../src/client/request";
 import { DynamicsWebApiError } from "../src/helpers/ErrorHelper";
+import { composeHeaders } from "../src/client/request/composers";
 
 describe("Regex.", () => {
     describe("isUuid -", () => {
@@ -255,7 +256,7 @@ describe("RequestUtility.", () => {
     });
 });
 
-describe("RequestUtility.composeHeaders -", () => {
+describe("Composers.composeHeaders -", () => {
     it("custom headers: request overrides config", () => {
         const config = {
             headers: { "custom-header": "1" },
@@ -266,7 +267,7 @@ describe("RequestUtility.composeHeaders -", () => {
             functionName: "",
         };
 
-        const result = RequestUtility.composeHeaders(dwaRequest, config);
+        const result = composeHeaders(dwaRequest, config);
         expect(result).to.deep.equal({ "custom-header": "10" });
     });
 
@@ -280,7 +281,7 @@ describe("RequestUtility.composeHeaders -", () => {
             functionName: "",
         };
 
-        const result = RequestUtility.composeHeaders(dwaRequest, config);
+        const result = composeHeaders(dwaRequest, config);
         expect(result).to.deep.equal({ "custom-header": "10", something: "else", john: "doe" });
     });
 });

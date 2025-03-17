@@ -347,7 +347,7 @@ Property Name | Type | Operation(s) Supported | Description
 action | `Object` | `callAction` | A JavaScript object that represents a Dynamics 365 Web API action.
 actionName | `string` | `callAction` | Web API Action name.
 addAnnotations | `boolean` | `retrieveCsdlMetadata` | If set to `true` the document will include many different kinds of annotations that can be useful. Most annotations are not included by default because they increase the total size of the document.
-apply | `string` | `retrieveMultiple`, `retrieveAll` | Sets the $apply system query option to aggregate and group your data dynamically. [More Info](https://docs.microsoft.com/en-us/powerapps/developer/common-data-service/webapi/query-data-web-api#aggregate-and-grouping-results)
+apply | `string` | `retrieveMultiple`, `retrieveAll` | Sets the $apply system query option to aggregate and group your data dynamically. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/query/aggregate-data)
 async | `boolean` | All | **XHR requests only!** Indicates whether the requests should be made synchronously or asynchronously. Default value is `true` (asynchronously).
 bypassCustomPluginExecution | `boolean` | `create`, `update`, `upsert`, `delete` | If set to true, the request bypasses custom business logic, all synchronous plug-ins and real-time workflows are disabled. Check for special exceptions in Microsft Docs. [More Info](https://docs.microsoft.com/en-us/powerapps/developer/data-platform/bypass-custom-business-logic)
 collection | `string` | All | Entity Collection name.

@@ -370,7 +370,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SearchResponse<TValue>>} Search result
      */
-    search: SearchFunction = async <TValue = any>(request: string | SearchRequest): Promise<SearchResponse<TValue>> => Dataverse.query(request, this.#client);
+    search: SearchFunction = async <TValue = any>(request: string | QueryRequest): Promise<SearchResponse<TValue>> => Dataverse.query(request, this.#client);
 
     /**
      * Provides suggestions as the user enters text into a form field.
@@ -418,6 +418,8 @@ export class DynamicsWebApi {
         getCollectionName: (entityName: string): string | null => getCollectionName(entityName),
     };
 }
+
+//have to put all types in here, so it is possible to export just a single d.ts file (there are no good solutions to automatically bundle all dts files currently)
 
 export interface Expand {
     /**An Array(of Strings) representing the $select OData System Query Option to control which attributes will be returned. */
@@ -902,19 +904,46 @@ export interface CsdlMetadataRequest extends BaseRequest {
 export type SearchMode = "any" | "all";
 export type SearchType = "simple" | "full";
 
+export type SearchEntity = {
+    /**Logical name of the table. Specifies scope of the query. */
+    name: string;
+    /**List of columns that needs to be projected when table documents are returned in response. If empty, only the table primary name is returned. */
+    selectColumns?: string[];
+    /**List of columns to scope the query on. If empty, only the table primary name is searched on.*/
+    searchColumns?: string[];
+    /**Filters applied on the entity.*/
+    filter?: string;
+};
+
+export type SearchOptions = {
+    /**Values can be simple or lucene. */
+    querytype?: "simple" | "lucene";
+    /**Enables intelligent query workflow to return probable set of results if no good matches are found for the search request terms.*/
+    besteffortsearchenabled?: boolean;
+    /**Enable ranking of results in the response optimized for display in search results pages where results are grouped by table.*/
+    searchmode?: SearchMode;
+    /**When specified as all the search terms must be matched in order to consider the document as a match. Setting its value to any defaults to matching any word in the search term.*/
+    grouprankingenabled?: boolean;
+};
+
 export interface SearchQueryBase {
     /**The search parameter value contains the term to be searched for and has a 100-character limit. For suggestions, min 3 characters in addition. */
     search: string;
     /**The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled. */
-    entities?: string[];
+    entities?: string[] | SearchEntity[];
     /**Filters are applied while searching data and are specified in standard OData syntax. */
     filter?: string;
 }
 
-export interface Search extends SearchQueryBase {
+export interface Query extends SearchQueryBase {
+    /**V2. Whether to return the total record count.*/
+    count?: boolean;
     /**Facets support the ability to drill down into data results after they've been retrieved. */
     facets?: string[];
-    /**Specify true to return the total record count; otherwise false. The default is false. */
+    /**
+     * Specify true to return the total record count; otherwise false. The default is false. 
+     * @deprecated Use "count".
+     */
     returnTotalRecordCount?: boolean;
     /**Specifies the number of search results to skip. */
     skip?: number;
@@ -922,11 +951,22 @@ export interface Search extends SearchQueryBase {
     top?: number;
     /**A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
     orderBy?: string[];
-    /**Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'. */
+    /**V2. Options are settings configured to search a search term. */
+    options?: SearchOptions[];
+    /**
+     * Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'.
+     * @deprecated Use "options.searchmode".
+     */
     searchMode?: SearchMode;
-    /**The search type specifies the syntax of a search query. Using 'simple' selects simple query syntax and 'full' selects Lucene query syntax. The default is 'simple'. */
+    /**
+     * For V2, use "options.querytype". The search type specifies the syntax of a search query. Using 'simple' selects simple query syntax and 'full' selects Lucene query syntax. The default is 'simple'.
+     * @deprecated Use "options.querytype".
+     */
     searchType?: SearchType;
 }
+
+/**@deprecated Use Query instead */
+export interface Search extends Query {}
 
 export interface Suggest extends SearchQueryBase {
     /**Use fuzzy search to aid with misspellings. The default is false. */
@@ -942,10 +982,13 @@ export interface Autocomplete extends SearchQueryBase {
     useFuzzy?: boolean;
 }
 
-export interface SearchRequest extends BaseRequest {
+export interface QueryRequest extends BaseRequest {
     /**Search query object */
-    query: Search;
+    query: Query;
 }
+
+/**@deprecated Use QueryRequest instead. */
+export interface SearchRequest extends QueryRequest {}
 
 export interface SuggestRequest extends BaseRequest {
     /**Suggestion query object */
@@ -1188,7 +1231,7 @@ type SearchFunction = {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SearchResponse<TValue>>} Search result
      */
-    <TValue = any>(request: SearchRequest): Promise<SearchResponse<TValue>>;
+    <TValue = any>(request: QueryRequest): Promise<SearchResponse<TValue>>;
 };
 
 type SuggestFunction = {

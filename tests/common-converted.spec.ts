@@ -4,7 +4,7 @@ import nock, { cleanAll } from "nock";
 
 import { DWA } from "../src/dwa";
 import * as Utility from "../src/utils/Utility";
-import { composeUrl, compose, composeHeaders } from "../src/utils/Request";
+import { composeUrl, composeRequest, composeHeaders } from "../src/client/request/composers";
 import { ErrorHelper } from "../src/helpers/ErrorHelper";
 import { data as _data, webApiUrl, responses } from "./stubs";
 import { dateReviver } from "../src/client/helpers/dateReviver";
@@ -1031,7 +1031,7 @@ describe("RequestUtility.composeUrl -", function () {
         dwaRequest.returnRepresentation = true;
 
         //@ts-ignore - testing if it works even with null
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         var expectedObject = Utility.copyObject(dwaRequest);
         expectedObject.path = "tests?$select=name,subject&$top=5&$orderby=order";
@@ -1045,7 +1045,7 @@ describe("RequestUtility.composeUrl -", function () {
         dwaRequest.impersonate = _data.testEntityId;
 
         //@ts-ignore - testing if it works even with null
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expectedObject = Utility.copyObject(dwaRequest);
         expectedObject.path = "tests?$select=name,subject&$count=true&$orderby=order";
@@ -1059,7 +1059,7 @@ describe("RequestUtility.composeUrl -", function () {
         dwaRequest.navigationProperty = "nav";
 
         //@ts-ignore - testing if it works with an incomplete object
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expectedObject = Utility.copyObject(dwaRequest);
         expectedObject.path = "tests/nav?$select=name,subject&$count=true&$orderby=order";
@@ -1076,7 +1076,7 @@ describe("RequestUtility.composeUrl -", function () {
         dwaRequest.functionName = "retrieve";
 
         //@ts-ignore - testing if it works even with null
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expectedObject = Utility.copyObject(dwaRequest);
         expectedObject.path = "tests/nav?$select=subject&$count=true&$orderby=order";
@@ -1637,7 +1637,7 @@ describe("RequestUtility.compose -", function () {
             collection: "cols",
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "cols";
@@ -1652,7 +1652,7 @@ describe("RequestUtility.compose -", function () {
             collection: "Cols",
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "Cols";
@@ -1667,7 +1667,7 @@ describe("RequestUtility.compose -", function () {
             collection: "EntityDefinitions",
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "EntityDefinitions";
@@ -1683,7 +1683,7 @@ describe("RequestUtility.compose -", function () {
         };
 
         let test = function () {
-            compose(dwaRequest, {});
+            composeRequest(dwaRequest, {});
         };
 
         expect(test).to.throw(/request\.collection/);
@@ -1703,7 +1703,7 @@ describe("RequestUtility.compose -", function () {
             key: null,
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "cols";
@@ -1714,7 +1714,7 @@ describe("RequestUtility.compose -", function () {
 
         dwaRequest.key = "";
 
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expected = Utility.copyObject(dwaRequest);
         expected.path = "cols";
@@ -1731,7 +1731,7 @@ describe("RequestUtility.compose -", function () {
         };
 
         var test = function () {
-            compose(dwaRequest, {});
+            composeRequest(dwaRequest, {});
         };
 
         expect(test).to.throw(/request\.key/);
@@ -1743,7 +1743,7 @@ describe("RequestUtility.compose -", function () {
             key: _data.testEntityId,
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "cols(" + _data.testEntityId + ")";
@@ -1759,7 +1759,7 @@ describe("RequestUtility.compose -", function () {
             key: "{" + _data.testEntityId + "}",
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "cols(" + _data.testEntityId + ")";
@@ -1777,7 +1777,7 @@ describe("RequestUtility.compose -", function () {
             returnRepresentation: true,
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "cols(" + _data.testEntityId + ")?$select=name";
@@ -1788,7 +1788,7 @@ describe("RequestUtility.compose -", function () {
 
         dwaRequest.navigationProperty = "nav";
 
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expected = Utility.copyObject(dwaRequest);
         expected.path = "cols(" + _data.testEntityId + ")/nav?$select=name";
@@ -1804,7 +1804,7 @@ describe("RequestUtility.compose -", function () {
             async: false,
         };
 
-        var result = compose(dwaRequest, {});
+        var result = composeRequest(dwaRequest, {});
 
         let expected = Utility.copyObject(dwaRequest);
         expected.path = "cols";
@@ -1815,7 +1815,7 @@ describe("RequestUtility.compose -", function () {
 
         dwaRequest.async = true;
 
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expected = Utility.copyObject(dwaRequest);
         expected.path = "cols";
@@ -1826,7 +1826,7 @@ describe("RequestUtility.compose -", function () {
 
         delete dwaRequest.async;
 
-        result = compose(dwaRequest, {});
+        result = composeRequest(dwaRequest, {});
 
         expected = Utility.copyObject(dwaRequest);
         expected.path = "cols";
@@ -1844,7 +1844,7 @@ describe("RequestUtility.compose -", function () {
         };
 
         var test = function () {
-            compose(dwaRequest, {});
+            composeRequest(dwaRequest, {});
         };
 
         expect(test).to.throw(/request\.async/);

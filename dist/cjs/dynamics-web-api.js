@@ -983,59 +983,37 @@ ConfigurationUtility.mergeApiConfigs = mergeApiConfigs;
 // src/client/RequestClient.ts
 init_Utility();
 
-// src/utils/Request.ts
+// src/client/helpers/entityNameMapper.ts
 init_Utility();
-init_ErrorHelper();
-init_Regex();
 var entityNames = null;
 var setEntityNames = (newEntityNames) => {
   entityNames = newEntityNames;
 };
-var compose = (request, config) => {
-  request.path = request.path || "";
-  request.functionName = request.functionName || "";
-  if (!request.url) {
-    if (!request._isUnboundRequest && !request.contentId && !request.collection) {
-      ErrorHelper.parameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
-    }
-    if (request.collection != null) {
-      ErrorHelper.stringParameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
-      request.path = request.collection;
-      if (request.key) {
-        request.key = ErrorHelper.keyParameterCheck(request.key, `DynamicsWebApi.${request.functionName}`, "request.key");
-        request.path += `(${request.key})`;
+var findCollectionName = (entityName) => {
+  if (isNull(entityNames)) return null;
+  const collectionName = entityNames[entityName];
+  if (!collectionName) {
+    for (const key in entityNames) {
+      if (entityNames[key] === entityName) {
+        return entityName;
       }
     }
-    if (request.contentId) {
-      ErrorHelper.stringParameterCheck(request.contentId, `DynamicsWebApi.${request.functionName}`, "request.contentId");
-      if (request.contentId.startsWith("$")) {
-        request.path = request.path ? `${request.contentId}/${request.path}` : request.contentId;
-      }
-    }
-    if (request.addPath) {
-      if (request.path) {
-        request.path += "/";
-      }
-      request.path += request.addPath;
-    }
-    request.path = composeUrl(request, config, request.path);
-    if (request.fetchXml) {
-      ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
-      let join = request.path.indexOf("?") === -1 ? "?" : "&";
-      request.path += `${join}fetchXml=${encodeURIComponent(request.fetchXml)}`;
-    }
-  } else {
-    ErrorHelper.stringParameterCheck(request.url, `DynamicsWebApi.${request.functionName}`, "request.url");
-    request.path = request.url.replace(config.dataApi.url, "");
   }
-  if (request.hasOwnProperty("async") && request.async != null) {
-    ErrorHelper.boolParameterCheck(request.async, `DynamicsWebApi.${request.functionName}`, "request.async");
-  } else {
-    request.async = true;
-  }
-  request.headers = composeHeaders(request, config);
-  return request;
+  return collectionName;
 };
+
+// src/client/helpers/executeRequest.ts
+async function executeRequest2(options) {
+  return false ? null.executeRequest(options) : (init_http(), __toCommonJS(http_exports)).executeRequest(options);
+}
+
+// src/client/RequestClient.ts
+init_ErrorHelper();
+
+// src/client/request/composers/url.ts
+init_ErrorHelper();
+init_Regex();
+init_Utility();
 var composeUrl = (request, config, url = "", joinSymbol = "&") => {
   var _a2, _b2, _c;
   const queryArray = [];
@@ -1166,6 +1144,65 @@ var composeUrl = (request, config, url = "", joinSymbol = "&") => {
   }
   return !queryArray.length ? url : url + "?" + queryArray.join(joinSymbol);
 };
+
+// src/client/request/composers/headers.ts
+init_ErrorHelper();
+
+// src/client/request/composers/preferHeader.ts
+init_ErrorHelper();
+init_Regex();
+var composePreferHeader = (request, config) => {
+  let { returnRepresentation, includeAnnotations, maxPageSize, trackChanges, continueOnError } = request;
+  if (request.prefer && request.prefer.length) {
+    ErrorHelper.stringOrArrayParameterCheck(request.prefer, `DynamicsWebApi.${request.functionName}`, "request.prefer");
+    const preferArray = typeof request.prefer === "string" ? request.prefer.split(",") : request.prefer;
+    preferArray.forEach((item) => {
+      const trimmedItem = item.trim();
+      if (trimmedItem === "return=representation") {
+        returnRepresentation = true;
+      } else if (trimmedItem.includes("odata.include-annotations=")) {
+        includeAnnotations = removeDoubleQuotes(trimmedItem.replace("odata.include-annotations=", ""));
+      } else if (trimmedItem.startsWith("odata.maxpagesize=")) {
+        maxPageSize = Number(removeDoubleQuotes(trimmedItem.replace("odata.maxpagesize=", ""))) || 0;
+      } else if (trimmedItem.includes("odata.track-changes")) {
+        trackChanges = true;
+      } else if (trimmedItem.includes("odata.continue-on-error")) {
+        continueOnError = true;
+      }
+    });
+  }
+  const prefer = [];
+  if (config) {
+    if (returnRepresentation == null) {
+      returnRepresentation = config.returnRepresentation;
+    }
+    includeAnnotations = includeAnnotations ?? config.includeAnnotations;
+    maxPageSize = maxPageSize ?? config.maxPageSize;
+  }
+  if (returnRepresentation) {
+    ErrorHelper.boolParameterCheck(returnRepresentation, `DynamicsWebApi.${request.functionName}`, "request.returnRepresentation");
+    prefer.push("return=representation");
+  }
+  if (includeAnnotations) {
+    ErrorHelper.stringParameterCheck(includeAnnotations, `DynamicsWebApi.${request.functionName}`, "request.includeAnnotations");
+    prefer.push(`odata.include-annotations="${includeAnnotations}"`);
+  }
+  if (maxPageSize && maxPageSize > 0) {
+    ErrorHelper.numberParameterCheck(maxPageSize, `DynamicsWebApi.${request.functionName}`, "request.maxPageSize");
+    prefer.push("odata.maxpagesize=" + maxPageSize);
+  }
+  if (trackChanges) {
+    ErrorHelper.boolParameterCheck(trackChanges, `DynamicsWebApi.${request.functionName}`, "request.trackChanges");
+    prefer.push("odata.track-changes");
+  }
+  if (continueOnError) {
+    ErrorHelper.boolParameterCheck(continueOnError, `DynamicsWebApi.${request.functionName}`, "request.continueOnError");
+    prefer.push("odata.continue-on-error");
+  }
+  return prefer.join(",");
+};
+
+// src/client/request/composers/headers.ts
 var composeHeaders = (request, config) => {
   const headers = { ...config.headers, ...request.userHeaders };
   const prefer = composePreferHeader(request, config);
@@ -1235,56 +1272,119 @@ var composeHeaders = (request, config) => {
   }
   return headers;
 };
-var composePreferHeader = (request, config) => {
-  let { returnRepresentation, includeAnnotations, maxPageSize, trackChanges, continueOnError } = request;
-  if (request.prefer && request.prefer.length) {
-    ErrorHelper.stringOrArrayParameterCheck(request.prefer, `DynamicsWebApi.${request.functionName}`, "request.prefer");
-    const preferArray = typeof request.prefer === "string" ? request.prefer.split(",") : request.prefer;
-    preferArray.forEach((item) => {
-      const trimmedItem = item.trim();
-      if (trimmedItem === "return=representation") {
-        returnRepresentation = true;
-      } else if (trimmedItem.includes("odata.include-annotations=")) {
-        includeAnnotations = removeDoubleQuotes(trimmedItem.replace("odata.include-annotations=", ""));
-      } else if (trimmedItem.startsWith("odata.maxpagesize=")) {
-        maxPageSize = Number(removeDoubleQuotes(trimmedItem.replace("odata.maxpagesize=", ""))) || 0;
-      } else if (trimmedItem.includes("odata.track-changes")) {
-        trackChanges = true;
-      } else if (trimmedItem.includes("odata.continue-on-error")) {
-        continueOnError = true;
-      }
-    });
-  }
-  const prefer = [];
-  if (config) {
-    if (returnRepresentation == null) {
-      returnRepresentation = config.returnRepresentation;
+
+// src/client/request/composers/request.ts
+init_ErrorHelper();
+var composeRequest = (request, config) => {
+  request.path = request.path || "";
+  request.functionName = request.functionName || "";
+  if (!request.url) {
+    if (!request._isUnboundRequest && !request.contentId && !request.collection) {
+      ErrorHelper.parameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
     }
-    includeAnnotations = includeAnnotations ?? config.includeAnnotations;
-    maxPageSize = maxPageSize ?? config.maxPageSize;
+    if (request.collection != null) {
+      ErrorHelper.stringParameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
+      request.path = request.collection;
+      if (request.key) {
+        request.key = ErrorHelper.keyParameterCheck(request.key, `DynamicsWebApi.${request.functionName}`, "request.key");
+        request.path += `(${request.key})`;
+      }
+    }
+    if (request.contentId) {
+      ErrorHelper.stringParameterCheck(request.contentId, `DynamicsWebApi.${request.functionName}`, "request.contentId");
+      if (request.contentId.startsWith("$")) {
+        request.path = request.path ? `${request.contentId}/${request.path}` : request.contentId;
+      }
+    }
+    if (request.addPath) {
+      if (request.path) {
+        request.path += "/";
+      }
+      request.path += request.addPath;
+    }
+    request.path = composeUrl(request, config, request.path);
+    if (request.fetchXml) {
+      ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
+      let join = request.path.indexOf("?") === -1 ? "?" : "&";
+      request.path += `${join}fetchXml=${encodeURIComponent(request.fetchXml)}`;
+    }
+  } else {
+    ErrorHelper.stringParameterCheck(request.url, `DynamicsWebApi.${request.functionName}`, "request.url");
+    request.path = request.url.replace(config.dataApi.url, "");
   }
-  if (returnRepresentation) {
-    ErrorHelper.boolParameterCheck(returnRepresentation, `DynamicsWebApi.${request.functionName}`, "request.returnRepresentation");
-    prefer.push("return=representation");
+  if (request.hasOwnProperty("async") && request.async != null) {
+    ErrorHelper.boolParameterCheck(request.async, `DynamicsWebApi.${request.functionName}`, "request.async");
+  } else {
+    request.async = true;
   }
-  if (includeAnnotations) {
-    ErrorHelper.stringParameterCheck(includeAnnotations, `DynamicsWebApi.${request.functionName}`, "request.includeAnnotations");
-    prefer.push(`odata.include-annotations="${includeAnnotations}"`);
-  }
-  if (maxPageSize && maxPageSize > 0) {
-    ErrorHelper.numberParameterCheck(maxPageSize, `DynamicsWebApi.${request.functionName}`, "request.maxPageSize");
-    prefer.push("odata.maxpagesize=" + maxPageSize);
-  }
-  if (trackChanges) {
-    ErrorHelper.boolParameterCheck(trackChanges, `DynamicsWebApi.${request.functionName}`, "request.trackChanges");
-    prefer.push("odata.track-changes");
-  }
-  if (continueOnError) {
-    ErrorHelper.boolParameterCheck(continueOnError, `DynamicsWebApi.${request.functionName}`, "request.continueOnError");
-    prefer.push("odata.continue-on-error");
-  }
-  return prefer.join(",");
+  request.headers = composeHeaders(request, config);
+  return request;
 };
+
+// src/client/request/processData.ts
+init_Regex();
+init_Utility();
+
+// src/client/helpers/index.ts
+init_dateReviver();
+init_parseBatchResponse();
+init_parseResponse();
+
+// src/client/request/processData.ts
+var processData = (data, config) => {
+  if (!data) return null;
+  if (data instanceof Uint8Array || data instanceof Uint16Array || data instanceof Uint32Array) return data;
+  const replaceEntityNameWithCollectionName = (value) => {
+    const valueParts = SEARCH_FOR_ENTITY_NAME_REGEX.exec(value);
+    if (valueParts && valueParts.length > 2) {
+      const collectionName = findCollectionName(valueParts[1]);
+      if (!isNull(collectionName)) {
+        return value.replace(SEARCH_FOR_ENTITY_NAME_REGEX, `${collectionName}$2`);
+      }
+    }
+    return value;
+  };
+  const addFullWebApiUrl = (key, value) => {
+    if (!value.startsWith(config.dataApi.url)) {
+      if (key.endsWith("@odata.bind")) {
+        if (!value.startsWith("/")) {
+          value = `/${value}`;
+        }
+      } else {
+        value = `${config.dataApi.url}${removeLeadingSlash(value)}`;
+      }
+    }
+    return value;
+  };
+  const stringifiedData = JSON.stringify(data, (key, value) => {
+    if (key.endsWith("@odata.bind") || key.endsWith("@odata.id")) {
+      if (typeof value === "string" && !value.startsWith("$")) {
+        value = removeCurlyBracketsFromUuid(value);
+        if (config.useEntityNames) {
+          value = replaceEntityNameWithCollectionName(value);
+        }
+        value = addFullWebApiUrl(key, value);
+      }
+    } else if (key.startsWith("oData") || key.endsWith("_Formatted") || key.endsWith("_NavigationProperty") || key.endsWith("_LogicalName")) {
+      return void 0;
+    }
+    return value;
+  });
+  return escapeUnicodeSymbols(stringifiedData);
+};
+
+// src/client/request/setStandardHeaders.ts
+var setStandardHeaders = (headers = {}) => {
+  if (!headers["Accept"]) headers["Accept"] = "application/json";
+  if (!headers["OData-MaxVersion"]) headers["OData-MaxVersion"] = "4.0";
+  if (!headers["OData-Version"]) headers["OData-Version"] = "4.0";
+  if (headers["Content-Range"]) headers["Content-Type"] = "application/octet-stream";
+  else if (!headers["Content-Type"]) headers["Content-Type"] = "application/json; charset=utf-8";
+  return headers;
+};
+
+// src/client/request/convertToBatch.ts
+init_Utility();
 var convertToBatch = (requests, config, batchRequest) => {
   const batchBoundary = `dwa_batch_${generateUUID()}`;
   const batchBody = [];
@@ -1356,75 +1456,6 @@ ${processData(internalRequest.data, config)}`);
   headers["Content-Type"] = `multipart/mixed;boundary=${batchBoundary}`;
   return { headers, body: batchBody.join("\r\n") };
 };
-var findCollectionName = (entityName) => {
-  if (isNull(entityNames)) return null;
-  const collectionName = entityNames[entityName];
-  if (!collectionName) {
-    for (const key in entityNames) {
-      if (entityNames[key] === entityName) {
-        return entityName;
-      }
-    }
-  }
-  return collectionName;
-};
-var processData = (data, config) => {
-  if (!data) return null;
-  if (data instanceof Uint8Array || data instanceof Uint16Array || data instanceof Uint32Array) return data;
-  const replaceEntityNameWithCollectionName = (value) => {
-    const valueParts = SEARCH_FOR_ENTITY_NAME_REGEX.exec(value);
-    if (valueParts && valueParts.length > 2) {
-      const collectionName = findCollectionName(valueParts[1]);
-      if (!isNull(collectionName)) {
-        return value.replace(SEARCH_FOR_ENTITY_NAME_REGEX, `${collectionName}$2`);
-      }
-    }
-    return value;
-  };
-  const addFullWebApiUrl = (key, value) => {
-    if (!value.startsWith(config.dataApi.url)) {
-      if (key.endsWith("@odata.bind")) {
-        if (!value.startsWith("/")) {
-          value = `/${value}`;
-        }
-      } else {
-        value = `${config.dataApi.url}${removeLeadingSlash(value)}`;
-      }
-    }
-    return value;
-  };
-  const stringifiedData = JSON.stringify(data, (key, value) => {
-    if (key.endsWith("@odata.bind") || key.endsWith("@odata.id")) {
-      if (typeof value === "string" && !value.startsWith("$")) {
-        value = removeCurlyBracketsFromUuid(value);
-        if (config.useEntityNames) {
-          value = replaceEntityNameWithCollectionName(value);
-        }
-        value = addFullWebApiUrl(key, value);
-      }
-    } else if (key.startsWith("oData") || key.endsWith("_Formatted") || key.endsWith("_NavigationProperty") || key.endsWith("_LogicalName")) {
-      return void 0;
-    }
-    return value;
-  });
-  return escapeUnicodeSymbols(stringifiedData);
-};
-var setStandardHeaders = (headers = {}) => {
-  if (!headers["Accept"]) headers["Accept"] = "application/json";
-  if (!headers["OData-MaxVersion"]) headers["OData-MaxVersion"] = "4.0";
-  if (!headers["OData-Version"]) headers["OData-Version"] = "4.0";
-  if (headers["Content-Range"]) headers["Content-Type"] = "application/octet-stream";
-  else if (!headers["Content-Type"]) headers["Content-Type"] = "application/json; charset=utf-8";
-  return headers;
-};
-
-// src/client/RequestClient.ts
-init_ErrorHelper();
-
-// src/client/helpers/executeRequest.ts
-async function executeRequest2(options) {
-  return false ? null.executeRequest(options) : (init_http(), __toCommonJS(http_exports)).executeRequest(options);
-}
 
 // src/client/RequestClient.ts
 var _addResponseParams = (requestId, responseParams) => {
@@ -1470,7 +1501,7 @@ var _getCollectionNames = async (entityName, config) => {
   if (!isNull(entityNames)) {
     return findCollectionName(entityName) || entityName;
   }
-  const request = compose(
+  const request = composeRequest(
     {
       method: "GET",
       collection: "EntityDefinitions",
@@ -1558,7 +1589,7 @@ var makeRequest = async (request, config) => {
   if (!request.isBatch) {
     const collectionName = await _checkCollectionName(request.collection, config);
     request.collection = collectionName;
-    compose(request, config);
+    composeRequest(request, config);
     request.responseParameters.convertedToBatch = false;
     if (request.path.length > 2e3) {
       const batchRequest = convertToBatch([request], config);
@@ -1573,7 +1604,7 @@ var makeRequest = async (request, config) => {
     }
     return _runRequest(request, config);
   }
-  compose(request, config);
+  composeRequest(request, config);
   _addResponseParams(request.requestId, request.responseParameters);
   _addRequestToBatchCollection(request.requestId, request);
 };
@@ -2409,7 +2440,7 @@ var FUNCTION_NAME41 = "search";
 var REQUEST_NAME40 = `${LIBRARY_NAME}.${FUNCTION_NAME41}`;
 async function query(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME40, "request");
-  const _isObject = isObject(request);
+  const _isObject = typeof request !== "string";
   const parameterName = _isObject ? "request.query.search" : "term";
   const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
   ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME40, "request.query");

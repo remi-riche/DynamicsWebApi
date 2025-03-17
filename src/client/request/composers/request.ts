@@ -1,0 +1,65 @@
+import { composeHeaders, composeUrl } from ".";
+import { ErrorHelper } from "../../../helpers/ErrorHelper";
+import type { InternalRequest } from "../../../types";
+import type { InternalConfig } from "../../../utils/Config";
+
+/**
+ * Converts a request object to URL link
+ * @param request Internal request object
+ * @param config Internal configuration object
+ * @returns Modified internal request object
+ */
+export const composeRequest = (request: InternalRequest, config: Partial<InternalConfig>): InternalRequest => {
+    request.path = request.path || "";
+    request.functionName = request.functionName || "";
+    if (!request.url) {
+        if (!request._isUnboundRequest && !request.contentId && !request.collection) {
+            ErrorHelper.parameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
+        }
+        if (request.collection != null) {
+            ErrorHelper.stringParameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
+            request.path = request.collection;
+
+            //add alternate key feature
+            if (request.key) {
+                request.key = ErrorHelper.keyParameterCheck(request.key, `DynamicsWebApi.${request.functionName}`, "request.key");
+                request.path += `(${request.key})`;
+            }
+        }
+
+        if (request.contentId) {
+            ErrorHelper.stringParameterCheck(request.contentId, `DynamicsWebApi.${request.functionName}`, "request.contentId");
+            if (request.contentId.startsWith("$")) {
+                request.path = request.path ? `${request.contentId}/${request.path}` : request.contentId;
+            }
+        }
+
+        if (request.addPath) {
+            if (request.path) {
+                request.path += "/";
+            }
+            request.path += request.addPath;
+        }
+
+        request.path = composeUrl(request, config, request.path);
+
+        if (request.fetchXml) {
+            ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
+            let join = request.path.indexOf("?") === -1 ? "?" : "&";
+            request.path += `${join}fetchXml=${encodeURIComponent(request.fetchXml)}`;
+        }
+    } else {
+        ErrorHelper.stringParameterCheck(request.url, `DynamicsWebApi.${request.functionName}`, "request.url");
+        request.path = request.url.replace(config.dataApi!.url, "");
+    }
+
+    if (request.hasOwnProperty("async") && request.async != null) {
+        ErrorHelper.boolParameterCheck(request.async, `DynamicsWebApi.${request.functionName}`, "request.async");
+    } else {
+        request.async = true;
+    }
+
+    request.headers = composeHeaders(request, config);
+
+    return request;
+};
