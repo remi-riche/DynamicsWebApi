@@ -4,6 +4,7 @@ import { copyObject } from "../../utils/Utility";
 import { ErrorHelper } from "../../helpers/ErrorHelper";
 import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
+import { convertSearchQuery } from "./convertSearchQuery";
 
 const FUNCTION_NAME = "search";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
@@ -22,7 +23,7 @@ export async function query<TValue = any>(request: string | QueryRequest, client
     internalRequest.collection = "query";
     internalRequest.functionName = FUNCTION_NAME;
     internalRequest.method = "POST";
-    internalRequest.data = internalRequest.query;
+    internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME, client.config);
     internalRequest.apiConfig = client.config.searchApi;
 
     delete internalRequest.query;

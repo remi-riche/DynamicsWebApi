@@ -930,7 +930,7 @@ export interface SearchQueryBase {
     /**The search parameter value contains the term to be searched for and has a 100-character limit. For suggestions, min 3 characters in addition. */
     search: string;
     /**The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled. */
-    entities?: string[] | SearchEntity[];
+    entities?: string[] | SearchEntity[] | string;
     /**Filters are applied while searching data and are specified in standard OData syntax. */
     filter?: string;
 }
@@ -941,7 +941,7 @@ export interface Query extends SearchQueryBase {
     /**Facets support the ability to drill down into data results after they've been retrieved. */
     facets?: string[];
     /**
-     * Specify true to return the total record count; otherwise false. The default is false. 
+     * V1. Specify true to return the total record count; otherwise false. The default is false. 
      * @deprecated Use "count".
      */
     returnTotalRecordCount?: boolean;
@@ -952,14 +952,14 @@ export interface Query extends SearchQueryBase {
     /**A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
     orderBy?: string[];
     /**V2. Options are settings configured to search a search term. */
-    options?: SearchOptions[];
+    options?: SearchOptions;
     /**
-     * Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'.
+     * V1. Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'.
      * @deprecated Use "options.searchmode".
      */
     searchMode?: SearchMode;
     /**
-     * For V2, use "options.querytype". The search type specifies the syntax of a search query. Using 'simple' selects simple query syntax and 'full' selects Lucene query syntax. The default is 'simple'.
+     * V1. The search type specifies the syntax of a search query. Using 'simple' selects simple query syntax and 'full' selects Lucene query syntax. The default is 'simple'.
      * @deprecated Use "options.querytype".
      */
     searchType?: SearchType;
