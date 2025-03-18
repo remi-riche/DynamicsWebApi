@@ -2,7 +2,7 @@ import { expect } from "chai";
 import nock from "nock";
 import * as mocks from "./stubs";
 
-import { DynamicsWebApi, Search, Autocomplete, Suggest } from "../src/dynamics-web-api";
+import { DynamicsWebApi, Query, Autocomplete, Suggest } from "../src/dynamics-web-api";
 
 const dynamicsWebApiTest = new DynamicsWebApi({
     dataApi: {
@@ -10,13 +10,19 @@ const dynamicsWebApiTest = new DynamicsWebApi({
     },
 });
 
-describe("dynamicsWebApi.search -", () => {
+const dynamicsWebApiSearchV2 = new DynamicsWebApi({
+    searchApi: {
+        version: "2.0",
+    },
+});
+
+describe("dynamicsWebApi.query -", () => {
     before(() => {
         global.DWA_BROWSER = false;
     });
     describe("basic", () => {
         let scope;
-        const searchQuery: Search = {
+        const searchQuery: Query = {
             search: "test",
         };
 
@@ -49,7 +55,7 @@ describe("dynamicsWebApi.search -", () => {
     });
     describe("basic - term parameter", () => {
         let scope;
-        const searchQuery: Search = {
+        const searchQuery: Query = {
             search: "test",
         };
 
@@ -80,7 +86,7 @@ describe("dynamicsWebApi.search -", () => {
     });
     describe("impersonate", () => {
         let scope;
-        const searchQuery: Search = {
+        const searchQuery: Query = {
             search: "test",
         };
 
@@ -104,6 +110,40 @@ describe("dynamicsWebApi.search -", () => {
                 const object = await dynamicsWebApiTest.search({
                     query: searchQuery,
                     impersonateAAD: mocks.data.testEntityId3,
+                });
+                expect(object).to.deep.equal(mocks.data.searchMultiple);
+            } catch (object) {
+                console.error(object);
+                throw object;
+            }
+        });
+
+        it("all requests have been made", function () {
+            expect(scope.isDone()).to.be.true;
+        });
+    });
+    describe("v2.0 - basic, count", () => {
+        let scope;
+        const searchQuery: Query = {
+            search: "test",
+            count: true,
+        };
+
+        before(() => {
+            const response = mocks.responses.searchMultiple;
+            scope = nock(mocks.searchApiUrlV2)
+                .post(mocks.responses.searchUrl, searchQuery as any)
+                .reply(response.status, response.responseText, response.responseHeaders);
+        });
+
+        after(() => {
+            nock.cleanAll();
+        });
+
+        it("returns a correct response", async () => {
+            try {
+                const object = await dynamicsWebApiSearchV2.search({
+                    query: searchQuery,
                 });
                 expect(object).to.deep.equal(mocks.data.searchMultiple);
             } catch (object) {

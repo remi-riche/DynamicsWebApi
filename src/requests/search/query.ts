@@ -6,7 +6,7 @@ import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
 import { convertSearchQuery } from "./convertSearchQuery";
 
-const FUNCTION_NAME = "search";
+const FUNCTION_NAME = "query";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
 
 export async function query<TValue = any>(request: string | QueryRequest, client: IDataverseClient): Promise<SearchResponse<TValue>> {
@@ -23,7 +23,7 @@ export async function query<TValue = any>(request: string | QueryRequest, client
     internalRequest.collection = "query";
     internalRequest.functionName = FUNCTION_NAME;
     internalRequest.method = "POST";
-    internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME, client.config);
+    internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME, client.config.searchApi);
     internalRequest.apiConfig = client.config.searchApi;
 
     delete internalRequest.query;

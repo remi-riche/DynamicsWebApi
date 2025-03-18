@@ -131,3 +131,8 @@ export const FETCH_XML_PAGE_REGEX = /^<fetch.+page=/;
 export const FETCH_XML_REPLACE_REGEX = /^(<fetch)/;
 
 export const DATE_FORMAT_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:Z|[-+]\d{2}:\d{2})$/;
+
+const SEARCH_SPECIAL_CHARACTERS_REGEX = /[+\-&|!(){}[\]^"~*?:\\\/]/g;
+export function escapeSearchSpecialCharacters(value: string): string {
+    return value.replace(SEARCH_SPECIAL_CHARACTERS_REGEX, "\\$&");
+}

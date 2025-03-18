@@ -22,7 +22,7 @@ export async function suggest<TValueDocument = any>(request: string | SuggestReq
 
     internalRequest.functionName = internalRequest.collection = FUNCTION_NAME;
     internalRequest.method = "POST";
-    internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME, client.config);
+    internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME, client.config.searchApi);
     internalRequest.apiConfig = client.config.searchApi;
 
     delete internalRequest.query;

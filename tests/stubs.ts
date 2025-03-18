@@ -21,6 +21,7 @@ const webApiUrl90 = `${serverUrl}/api/data/v9.0/`;
 const webApiUrl91 = `${serverUrl}/api/data/v9.1/`;
 const webApiUrl92 = `${serverUrl}/api/data/v9.2/`;
 const searchApiUrl = `${serverUrl}/api/search/v1.0/`;
+const searchApiUrlV2 = `${serverUrl}/api/search/v2.0/`;
 const powerPagesApiUrl = `${portalUrl}/_api/`;
 
 const dataStubs = {
@@ -1493,6 +1494,7 @@ export {
     webApiUrl92,
     utils,
     searchApiUrl,
+    searchApiUrlV2,
     serverUrl,
     powerPagesApiUrl,
     portalUrl,

@@ -915,7 +915,7 @@ export type SearchEntity = {
     filter?: string;
 };
 
-export type SearchOptions = {
+export type SearchOptions = Record<string, any> & {
     /**Values can be simple or lucene. */
     querytype?: "simple" | "lucene";
     /**Enables intelligent query workflow to return probable set of results if no good matches are found for the search request terms.*/
@@ -952,7 +952,7 @@ export interface Query extends SearchQueryBase {
     /**A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
     orderBy?: string[];
     /**V2. Options are settings configured to search a search term. */
-    options?: SearchOptions;
+    options?: string | SearchOptions;
     /**
      * V1. Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'.
      * @deprecated Use "options.searchmode".
@@ -1000,11 +1000,18 @@ export interface AutocompleteRequest extends BaseRequest {
     query: Autocomplete;
 }
 
-export interface ApiConfig {
-    /** API Version to use, for example: "9.2" or "1.0" */
+export type SearchApiOptions = {
+    /**Escapes the search string. Special characters that require escaping include the following: + - & | ! ( ) { } [ ] ^ " ~ * ? : \ /. */
+    escapeSpecialCharacters?: boolean;
+}
+
+export interface ApiConfig<TOptions = any> {
+    /** API Version to use, for example: "9.2" or "1.0". */
     version?: string;
-    /** API Path, for example: "data" or "search" */
+    /** API Path, for example: "data" or "search". */
     path?: string;
+    /** Specific API options. Currently it is only available for the Search API .*/
+    options?: TOptions;
 }
 
 export interface AccessToken {
@@ -1036,7 +1043,7 @@ export interface Config {
     /**Configuration object for Dataverse Web API (with path "data"). */
     dataApi?: ApiConfig;
     /**Configuration object for Dataverse Search API (with path "search"). */
-    searchApi?: ApiConfig;
+    searchApi?: ApiConfig<SearchApiOptions>;
     /**Default headers to supply with each request. */
     headers?: HeaderCollection;
 }

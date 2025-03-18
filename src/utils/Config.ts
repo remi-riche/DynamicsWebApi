@@ -1,11 +1,15 @@
 import { isRunningWithinPortals, getClientUrl } from "./Utility";
 import { ErrorHelper } from "../helpers/ErrorHelper";
-import { ApiConfig, Config } from "../dynamics-web-api";
+import { ApiConfig, Config, SearchApiOptions } from "../dynamics-web-api";
+import { LIBRARY_NAME } from "../requests/constants";
 
 type ApiType = "dataApi" | "searchApi";
 
+const FUNCTION_NAME = `${LIBRARY_NAME}.setConfig`;
+
 export interface InternalApiConfig extends ApiConfig {
     url: string;
+    escapeSpecialCharacters?: boolean;
 }
 
 export interface InternalConfig extends Config {
@@ -26,24 +30,37 @@ const mergeApiConfigs = (apiConfig: ApiConfig | undefined, apiType: ApiType, int
     const internalApiConfig = internalConfig[apiType] as InternalApiConfig;
 
     if (apiConfig?.version) {
-        ErrorHelper.stringParameterCheck(apiConfig.version, "DynamicsWebApi.setConfig", `config.${apiType}.version`);
+        ErrorHelper.stringParameterCheck(apiConfig.version, FUNCTION_NAME, `config.${apiType}.version`);
         internalApiConfig.version = apiConfig.version;
     }
 
     if (apiConfig?.path) {
-        ErrorHelper.stringParameterCheck(apiConfig.path, "DynamicsWebApi.setConfig", `config.${apiType}.path`);
+        ErrorHelper.stringParameterCheck(apiConfig.path, FUNCTION_NAME, `config.${apiType}.path`);
         internalApiConfig.path = apiConfig.path;
+    }
+
+    if (apiType === "searchApi") {
+        mergeSearchApiOptions(apiConfig?.options, internalApiConfig);
     }
 
     internalApiConfig.url = getApiUrl(internalConfig.serverUrl, internalApiConfig);
 };
+
+const mergeSearchApiOptions = (options: SearchApiOptions | undefined, internalApiConfig: InternalApiConfig): void => {
+    if (!options) return;
+
+    if (internalApiConfig.escapeSpecialCharacters != null) {
+        ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
+        internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
+    }
+}
 
 export class ConfigurationUtility {
     static mergeApiConfigs = mergeApiConfigs;
 
     static merge(internalConfig: InternalConfig, config?: Config): void {
         if (config?.serverUrl) {
-            ErrorHelper.stringParameterCheck(config.serverUrl, "DynamicsWebApi.setConfig", "config.serverUrl");
+            ErrorHelper.stringParameterCheck(config.serverUrl, FUNCTION_NAME, "config.serverUrl");
             internalConfig.serverUrl = config.serverUrl;
         }
 
@@ -51,40 +68,40 @@ export class ConfigurationUtility {
         mergeApiConfigs(config?.searchApi, "searchApi", internalConfig);
 
         if (config?.impersonate) {
-            internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, "DynamicsWebApi.setConfig", "config.impersonate");
+            internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, FUNCTION_NAME, "config.impersonate");
         }
 
         if (config?.impersonateAAD) {
-            internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, "DynamicsWebApi.setConfig", "config.impersonateAAD");
+            internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, FUNCTION_NAME, "config.impersonateAAD");
         }
 
         if (config?.onTokenRefresh) {
-            ErrorHelper.callbackParameterCheck(config.onTokenRefresh, "DynamicsWebApi.setConfig", "config.onTokenRefresh");
+            ErrorHelper.callbackParameterCheck(config.onTokenRefresh, FUNCTION_NAME, "config.onTokenRefresh");
             internalConfig.onTokenRefresh = config.onTokenRefresh;
         }
 
         if (config?.includeAnnotations) {
-            ErrorHelper.stringParameterCheck(config.includeAnnotations, "DynamicsWebApi.setConfig", "config.includeAnnotations");
+            ErrorHelper.stringParameterCheck(config.includeAnnotations, FUNCTION_NAME, "config.includeAnnotations");
             internalConfig.includeAnnotations = config.includeAnnotations;
         }
 
         if (config?.timeout) {
-            ErrorHelper.numberParameterCheck(config.timeout, "DynamicsWebApi.setConfig", "config.timeout");
+            ErrorHelper.numberParameterCheck(config.timeout, FUNCTION_NAME, "config.timeout");
             internalConfig.timeout = config.timeout;
         }
 
         if (config?.maxPageSize) {
-            ErrorHelper.numberParameterCheck(config.maxPageSize, "DynamicsWebApi.setConfig", "config.maxPageSize");
+            ErrorHelper.numberParameterCheck(config.maxPageSize, FUNCTION_NAME, "config.maxPageSize");
             internalConfig.maxPageSize = config.maxPageSize;
         }
 
         if (config?.returnRepresentation) {
-            ErrorHelper.boolParameterCheck(config.returnRepresentation, "DynamicsWebApi.setConfig", "config.returnRepresentation");
+            ErrorHelper.boolParameterCheck(config.returnRepresentation, FUNCTION_NAME, "config.returnRepresentation");
             internalConfig.returnRepresentation = config.returnRepresentation;
         }
 
         if (config?.useEntityNames) {
-            ErrorHelper.boolParameterCheck(config.useEntityNames, "DynamicsWebApi.setConfig", "config.useEntityNames");
+            ErrorHelper.boolParameterCheck(config.useEntityNames, FUNCTION_NAME, "config.useEntityNames");
             internalConfig.useEntityNames = config.useEntityNames;
         }
 
@@ -93,15 +110,15 @@ export class ConfigurationUtility {
         }
 
         if (!global.DWA_BROWSER && config?.proxy) {
-            ErrorHelper.parameterCheck(config.proxy, "DynamicsWebApi.setConfig", "config.proxy");
+            ErrorHelper.parameterCheck(config.proxy, FUNCTION_NAME, "config.proxy");
 
             if (config.proxy.url) {
-                ErrorHelper.stringParameterCheck(config.proxy.url, "DynamicsWebApi.setConfig", "config.proxy.url");
+                ErrorHelper.stringParameterCheck(config.proxy.url, FUNCTION_NAME, "config.proxy.url");
 
                 if (config.proxy.auth) {
-                    ErrorHelper.parameterCheck(config.proxy.auth, "DynamicsWebApi.setConfig", "config.proxy.auth");
-                    ErrorHelper.stringParameterCheck(config.proxy.auth.username, "DynamicsWebApi.setConfig", "config.proxy.auth.username");
-                    ErrorHelper.stringParameterCheck(config.proxy.auth.password, "DynamicsWebApi.setConfig", "config.proxy.auth.password");
+                    ErrorHelper.parameterCheck(config.proxy.auth, FUNCTION_NAME, "config.proxy.auth");
+                    ErrorHelper.stringParameterCheck(config.proxy.auth.username, FUNCTION_NAME, "config.proxy.auth.username");
+                    ErrorHelper.stringParameterCheck(config.proxy.auth.password, FUNCTION_NAME, "config.proxy.auth.password");
                 }
             }
 
