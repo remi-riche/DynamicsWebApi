@@ -5,6 +5,11 @@ import { convertEntitiesProperty, convertQuery, convertSearchQuery } from "../sr
 import { InternalApiConfig } from "../src/utils/Config";
 
 describe("convertEntitiesProperty", () => {
+    it("returns undefined if entities is undefined", () => {
+        const convertedEntities = convertEntitiesProperty(undefined, "1.0");
+        expect(convertedEntities).to.be.undefined;
+    });
+
     describe("v1.0 <- v2.0", () => {
         describe("string", () => {
             const entities = JSON.stringify([
@@ -242,6 +247,28 @@ describe("convertQuery", () => {
                     options: JSON.stringify({
                         searchmode: "all",
                         querytype: "lucene",
+                    }),
+                });
+            });
+        });
+
+        describe("returnTotalRecordCount, searchMode, searchType 2", () => {
+            const searchQuery: Query = {
+                search: "test",
+                returnTotalRecordCount: true,
+                searchMode: "any",
+                searchType: "simple",
+            };
+
+            it("converts the query correctly", () => {
+                convertQuery(searchQuery, "2.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    count: true,
+                    options: JSON.stringify({
+                        searchmode: "any",
+                        querytype: "simple",
                     }),
                 });
             });

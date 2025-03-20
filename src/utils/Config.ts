@@ -49,7 +49,7 @@ const mergeApiConfigs = (apiConfig: ApiConfig | undefined, apiType: ApiType, int
 const mergeSearchApiOptions = (options: SearchApiOptions | undefined, internalApiConfig: InternalApiConfig): void => {
     if (!options) return;
 
-    if (internalApiConfig.escapeSpecialCharacters != null) {
+    if (options.escapeSpecialCharacters != null) {
         ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
         internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
     }
@@ -95,12 +95,12 @@ export class ConfigurationUtility {
             internalConfig.maxPageSize = config.maxPageSize;
         }
 
-        if (config?.returnRepresentation) {
+        if (config?.returnRepresentation != null) {
             ErrorHelper.boolParameterCheck(config.returnRepresentation, FUNCTION_NAME, "config.returnRepresentation");
             internalConfig.returnRepresentation = config.returnRepresentation;
         }
 
-        if (config?.useEntityNames) {
+        if (config?.useEntityNames != null) {
             ErrorHelper.boolParameterCheck(config.useEntityNames, FUNCTION_NAME, "config.useEntityNames");
             internalConfig.useEntityNames = config.useEntityNames;
         }

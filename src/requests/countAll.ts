@@ -13,5 +13,5 @@ export const countAll = async (request: CountAllRequest, client: IDataverseClien
 
     const response = await retrieveAllRequest(request, client);
 
-    return response ? (response.value ? response.value.length : 0) : 0;
+    return response.value.length;
 };

@@ -3,7 +3,7 @@ import nock from "nock";
 import * as mocks from "./stubs";
 
 import * as RequestClient from "../src/client/RequestClient";
-import { InternalConfig } from "../src/utils/Config";
+import { ConfigurationUtility, InternalConfig } from "../src/utils/Config";
 import * as Core from "../src/types";
 import * as Regex from "../src/helpers/Regex";
 import * as RequestUtility from "../src/client/request";
@@ -283,5 +283,115 @@ describe("Composers.composeHeaders -", () => {
 
         const result = composeHeaders(dwaRequest, config);
         expect(result).to.deep.equal({ "custom-header": "10", something: "else", john: "doe" });
+    });
+});
+
+describe("Config.merge -", () => {
+    const defaultConfig: InternalConfig = ConfigurationUtility.default();
+
+    it("returnRepresentation = true -> false", () => {
+        const internalConfig: InternalConfig = {
+            ...defaultConfig,
+            returnRepresentation: true,
+        };
+
+        ConfigurationUtility.merge(internalConfig, {
+            returnRepresentation: false,
+        });
+
+        expect(internalConfig.returnRepresentation).to.be.false;
+    });
+
+    it("searchApiOptions. escapeSpecialCharacters = null -> true", () => {
+        const internalConfig: InternalConfig = {
+            ...defaultConfig,
+        };
+
+        ConfigurationUtility.merge(internalConfig, {
+            searchApi: {
+                options: {
+                    escapeSpecialCharacters: true,
+                },
+            },
+        });
+
+        expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.true;
+    });
+
+    it("searchApiOptions. escapeSpecialCharacters = true -> false", () => {
+        const internalConfig: InternalConfig = {
+            ...defaultConfig,
+            searchApi: {
+                url: "",
+                escapeSpecialCharacters: true,
+            },
+        };
+
+        ConfigurationUtility.merge(internalConfig, {
+            searchApi: {
+                options: {
+                    escapeSpecialCharacters: false,
+                },
+            },
+        });
+
+        expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.false;
+    });
+
+    it("searchApiOptions. escapeSpecialCharacters = false -> true", () => {
+        const internalConfig: InternalConfig = {
+            ...defaultConfig,
+            searchApi: {
+                url: "",
+                escapeSpecialCharacters: false,
+            },
+        };
+
+        ConfigurationUtility.merge(internalConfig, {
+            searchApi: {
+                options: {
+                    escapeSpecialCharacters: true,
+                },
+            },
+        });
+
+        expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.true;
+    });
+
+    it("searchApiOptions. empty options does not overwrite current options", () => {
+        const internalConfig: InternalConfig = {
+            ...defaultConfig,
+            searchApi: {
+                url: "",
+                escapeSpecialCharacters: true,
+            },
+        };
+
+        ConfigurationUtility.merge(internalConfig, {
+            searchApi: {
+                options: {},
+            },
+        });
+
+        expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.true;
+    });
+
+    it("searchApiOptions. options = undefined", () => {
+        const internalConfig: InternalConfig = {
+            ...defaultConfig,
+            searchApi: {
+                url: "",
+                escapeSpecialCharacters: false,
+            },
+        };
+
+        ConfigurationUtility.merge(internalConfig, {
+            searchApi: {
+                version: "2.0"
+            },
+        });
+
+        expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.false;
+        expect(internalConfig.searchApi.version).to.be.eq("2.0");
     });
 });
