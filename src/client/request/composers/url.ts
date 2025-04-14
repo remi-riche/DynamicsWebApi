@@ -132,6 +132,11 @@ export const composeUrl = (request: InternalRequest | null, config: Config | nul
             ErrorHelper.boolParameterCheck(request.isBatch, `DynamicsWebApi.${request.functionName}`, "request.isBatch");
         }
 
+        if (request.fetchXml) {
+            ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
+            queryArray.push("fetchXml=" + encodeURIComponent(request.fetchXml));
+        }
+
         if (!isNull(request.inChangeSet)) {
             ErrorHelper.boolParameterCheck(request.inChangeSet, `DynamicsWebApi.${request.functionName}`, "request.inChangeSet");
         }
@@ -157,7 +162,7 @@ export const composeUrl = (request: InternalRequest | null, config: Config | nul
                     };
                     let expandConverted = composeUrl(expandRequest, config, "", ";");
                     if (expandConverted) {
-                        expandConverted = `(${expandConverted.slice(1)})`;
+                        expandConverted = `(${expandConverted})`;
                     }
                     expandQueryArray.push(property + expandConverted);
                 }
@@ -168,5 +173,17 @@ export const composeUrl = (request: InternalRequest | null, config: Config | nul
         }
     }
 
-    return !queryArray.length ? url : url + "?" + queryArray.join(joinSymbol);
+    // nothing to add to the URL
+    if (!queryArray.length) {
+        return url;
+    }
+
+    // in any other cases the joinSymbol is ";" (during expand process)
+    if (joinSymbol === "&") {
+        url += "?";
+    }
+
+    return url + queryArray.join(joinSymbol);
+
+    // return !queryArray.length ? url : url + "?" + queryArray.join(joinSymbol);
 };

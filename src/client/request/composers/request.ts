@@ -10,27 +10,28 @@ import type { InternalConfig } from "../../../utils/Config";
  * @returns Modified internal request object
  */
 export const composeRequest = (request: InternalRequest, config: Partial<InternalConfig>): InternalRequest => {
-    request.path = request.path || "";
+    request.path = ""; //path must always be reset
     request.functionName = request.functionName || "";
     if (!request.url) {
         if (!request._isUnboundRequest && !request.contentId && !request.collection) {
             ErrorHelper.parameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
         }
+
+        if (request.contentId) {
+            ErrorHelper.stringParameterCheck(request.contentId, `DynamicsWebApi.${request.functionName}`, "request.contentId");
+            if (request.contentId.startsWith("$")) {
+                request.path = request.contentId;
+            }
+        }
+
         if (request.collection != null) {
             ErrorHelper.stringParameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
-            request.path = request.collection;
+            request.path += request.path ? `/${request.collection}` : request.collection;
 
             //add alternate key feature
             if (request.key) {
                 request.key = ErrorHelper.keyParameterCheck(request.key, `DynamicsWebApi.${request.functionName}`, "request.key");
                 request.path += `(${request.key})`;
-            }
-        }
-
-        if (request.contentId) {
-            ErrorHelper.stringParameterCheck(request.contentId, `DynamicsWebApi.${request.functionName}`, "request.contentId");
-            if (request.contentId.startsWith("$")) {
-                request.path = request.path ? `${request.contentId}/${request.path}` : request.contentId;
             }
         }
 
@@ -42,12 +43,6 @@ export const composeRequest = (request: InternalRequest, config: Partial<Interna
         }
 
         request.path = composeUrl(request, config, request.path);
-
-        if (request.fetchXml) {
-            ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
-            let join = request.path.indexOf("?") === -1 ? "?" : "&";
-            request.path += `${join}fetchXml=${encodeURIComponent(request.fetchXml)}`;
-        }
     } else {
         ErrorHelper.stringParameterCheck(request.url, `DynamicsWebApi.${request.functionName}`, "request.url");
         request.path = request.url.replace(config.dataApi!.url, "");
