@@ -1,8 +1,7 @@
-import type { Autocomplete, Suggest, Query, SearchEntity, SearchOptions } from "../../dynamics-web-api";
 import { escapeSearchSpecialCharacters } from "../../helpers/Regex";
-import { InternalApiConfig } from "../../utils/Config";
-
-type SearchApiFunction = "query" | "suggest" | "autocomplete";
+import type { Autocomplete, Suggest, Query, SearchEntity, SearchOptions } from "../../dynamics-web-api";
+import type { InternalApiConfig } from "../../utils/Config";
+import type { SearchApiFunction } from "./search.types";
 
 export function convertSearchQuery(query: Query | Suggest | Autocomplete, functionName: SearchApiFunction, config: InternalApiConfig) {
     if (!query) return query;
@@ -91,7 +90,6 @@ export function convertQuery(query: Query, version: string = "1.0"): void {
             }
             delete query.returnTotalRecordCount;
         }
-
 
         if (query.searchMode || query.searchType) {
             //only set the options property if it's not a string

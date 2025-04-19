@@ -111,7 +111,10 @@ function removeDoubleQuotes(value) {
 function getUpdateMethod(collection) {
   return SPECIAL_COLLECTION_FOR_UPDATE_REGEX.test(collection ?? "") ? "PUT" : "PATCH";
 }
-var UUID, UUID_REGEX, EXTRACT_UUID_REGEX, EXTRACT_UUID_FROM_URL_REGEX, REMOVE_BRACKETS_FROM_UUID_REGEX, ENTITY_UUID_REGEX, QUOTATION_MARK_REGEX, PAGING_COOKIE_REGEX, SPECIAL_CHARACTER_REGEX, LEADING_SLASH_REGEX, UNICODE_SYMBOLS_REGEX, DOUBLE_QUOTE_REGEX, BATCH_RESPONSE_HEADERS_REGEX, HTTP_STATUS_REGEX, CONTENT_TYPE_PLAIN_REGEX, ODATA_ENTITYID_REGEX, TEXT_REGEX, LINE_ENDING_REGEX, SEARCH_FOR_ENTITY_NAME_REGEX, SPECIAL_COLLECTION_FOR_UPDATE_REGEX, FETCH_XML_TOP_REGEX, FETCH_XML_PAGE_REGEX, FETCH_XML_REPLACE_REGEX, DATE_FORMAT_REGEX;
+function escapeSearchSpecialCharacters(value) {
+  return value.replace(SEARCH_SPECIAL_CHARACTERS_REGEX, "\\$&");
+}
+var UUID, UUID_REGEX, EXTRACT_UUID_REGEX, EXTRACT_UUID_FROM_URL_REGEX, REMOVE_BRACKETS_FROM_UUID_REGEX, ENTITY_UUID_REGEX, QUOTATION_MARK_REGEX, PAGING_COOKIE_REGEX, SPECIAL_CHARACTER_REGEX, LEADING_SLASH_REGEX, UNICODE_SYMBOLS_REGEX, DOUBLE_QUOTE_REGEX, BATCH_RESPONSE_HEADERS_REGEX, HTTP_STATUS_REGEX, CONTENT_TYPE_PLAIN_REGEX, ODATA_ENTITYID_REGEX, TEXT_REGEX, LINE_ENDING_REGEX, SEARCH_FOR_ENTITY_NAME_REGEX, SPECIAL_COLLECTION_FOR_UPDATE_REGEX, FETCH_XML_TOP_REGEX, FETCH_XML_PAGE_REGEX, FETCH_XML_REPLACE_REGEX, DATE_FORMAT_REGEX, SEARCH_SPECIAL_CHARACTERS_REGEX;
 var init_Regex = __esm({
   "src/helpers/Regex.ts"() {
     "use strict";
@@ -139,6 +142,7 @@ var init_Regex = __esm({
     FETCH_XML_PAGE_REGEX = /^<fetch.+page=/;
     FETCH_XML_REPLACE_REGEX = /^(<fetch)/;
     DATE_FORMAT_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:Z|[-+]\d{2}:\d{2})$/;
+    SEARCH_SPECIAL_CHARACTERS_REGEX = /[+\-&|!(){}[\]^"~*?:\\\/]/g;
   }
 });
 
@@ -862,6 +866,12 @@ var init_http = __esm({
 // src/utils/Config.ts
 init_Utility();
 init_ErrorHelper();
+
+// src/requests/constants.ts
+var LIBRARY_NAME = "DynamicsWebApi";
+
+// src/utils/Config.ts
+var FUNCTION_NAME = `${LIBRARY_NAME}.setConfig`;
 var getApiUrl = (serverUrl, apiConfig) => {
   if (isRunningWithinPortals()) {
     return new URL("_api", global.window.location.origin).toString() + "/";
@@ -873,64 +883,74 @@ var getApiUrl = (serverUrl, apiConfig) => {
 var mergeApiConfigs = (apiConfig, apiType, internalConfig) => {
   const internalApiConfig = internalConfig[apiType];
   if (apiConfig == null ? void 0 : apiConfig.version) {
-    ErrorHelper.stringParameterCheck(apiConfig.version, "DynamicsWebApi.setConfig", `config.${apiType}.version`);
+    ErrorHelper.stringParameterCheck(apiConfig.version, FUNCTION_NAME, `config.${apiType}.version`);
     internalApiConfig.version = apiConfig.version;
   }
   if (apiConfig == null ? void 0 : apiConfig.path) {
-    ErrorHelper.stringParameterCheck(apiConfig.path, "DynamicsWebApi.setConfig", `config.${apiType}.path`);
+    ErrorHelper.stringParameterCheck(apiConfig.path, FUNCTION_NAME, `config.${apiType}.path`);
     internalApiConfig.path = apiConfig.path;
   }
+  if (apiType === "searchApi") {
+    mergeSearchApiOptions(apiConfig == null ? void 0 : apiConfig.options, internalApiConfig);
+  }
   internalApiConfig.url = getApiUrl(internalConfig.serverUrl, internalApiConfig);
+};
+var mergeSearchApiOptions = (options, internalApiConfig) => {
+  if (!options) return;
+  if (options.escapeSpecialCharacters != null) {
+    ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
+    internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
+  }
 };
 var ConfigurationUtility = class {
   static merge(internalConfig, config) {
     if (config == null ? void 0 : config.serverUrl) {
-      ErrorHelper.stringParameterCheck(config.serverUrl, "DynamicsWebApi.setConfig", "config.serverUrl");
+      ErrorHelper.stringParameterCheck(config.serverUrl, FUNCTION_NAME, "config.serverUrl");
       internalConfig.serverUrl = config.serverUrl;
     }
     mergeApiConfigs(config == null ? void 0 : config.dataApi, "dataApi", internalConfig);
     mergeApiConfigs(config == null ? void 0 : config.searchApi, "searchApi", internalConfig);
     if (config == null ? void 0 : config.impersonate) {
-      internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, "DynamicsWebApi.setConfig", "config.impersonate");
+      internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, FUNCTION_NAME, "config.impersonate");
     }
     if (config == null ? void 0 : config.impersonateAAD) {
-      internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, "DynamicsWebApi.setConfig", "config.impersonateAAD");
+      internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, FUNCTION_NAME, "config.impersonateAAD");
     }
     if (config == null ? void 0 : config.onTokenRefresh) {
-      ErrorHelper.callbackParameterCheck(config.onTokenRefresh, "DynamicsWebApi.setConfig", "config.onTokenRefresh");
+      ErrorHelper.callbackParameterCheck(config.onTokenRefresh, FUNCTION_NAME, "config.onTokenRefresh");
       internalConfig.onTokenRefresh = config.onTokenRefresh;
     }
     if (config == null ? void 0 : config.includeAnnotations) {
-      ErrorHelper.stringParameterCheck(config.includeAnnotations, "DynamicsWebApi.setConfig", "config.includeAnnotations");
+      ErrorHelper.stringParameterCheck(config.includeAnnotations, FUNCTION_NAME, "config.includeAnnotations");
       internalConfig.includeAnnotations = config.includeAnnotations;
     }
     if (config == null ? void 0 : config.timeout) {
-      ErrorHelper.numberParameterCheck(config.timeout, "DynamicsWebApi.setConfig", "config.timeout");
+      ErrorHelper.numberParameterCheck(config.timeout, FUNCTION_NAME, "config.timeout");
       internalConfig.timeout = config.timeout;
     }
     if (config == null ? void 0 : config.maxPageSize) {
-      ErrorHelper.numberParameterCheck(config.maxPageSize, "DynamicsWebApi.setConfig", "config.maxPageSize");
+      ErrorHelper.numberParameterCheck(config.maxPageSize, FUNCTION_NAME, "config.maxPageSize");
       internalConfig.maxPageSize = config.maxPageSize;
     }
-    if (config == null ? void 0 : config.returnRepresentation) {
-      ErrorHelper.boolParameterCheck(config.returnRepresentation, "DynamicsWebApi.setConfig", "config.returnRepresentation");
+    if ((config == null ? void 0 : config.returnRepresentation) != null) {
+      ErrorHelper.boolParameterCheck(config.returnRepresentation, FUNCTION_NAME, "config.returnRepresentation");
       internalConfig.returnRepresentation = config.returnRepresentation;
     }
-    if (config == null ? void 0 : config.useEntityNames) {
-      ErrorHelper.boolParameterCheck(config.useEntityNames, "DynamicsWebApi.setConfig", "config.useEntityNames");
+    if ((config == null ? void 0 : config.useEntityNames) != null) {
+      ErrorHelper.boolParameterCheck(config.useEntityNames, FUNCTION_NAME, "config.useEntityNames");
       internalConfig.useEntityNames = config.useEntityNames;
     }
     if (config == null ? void 0 : config.headers) {
       internalConfig.headers = config.headers;
     }
     if (config == null ? void 0 : config.proxy) {
-      ErrorHelper.parameterCheck(config.proxy, "DynamicsWebApi.setConfig", "config.proxy");
+      ErrorHelper.parameterCheck(config.proxy, FUNCTION_NAME, "config.proxy");
       if (config.proxy.url) {
-        ErrorHelper.stringParameterCheck(config.proxy.url, "DynamicsWebApi.setConfig", "config.proxy.url");
+        ErrorHelper.stringParameterCheck(config.proxy.url, FUNCTION_NAME, "config.proxy.url");
         if (config.proxy.auth) {
-          ErrorHelper.parameterCheck(config.proxy.auth, "DynamicsWebApi.setConfig", "config.proxy.auth");
-          ErrorHelper.stringParameterCheck(config.proxy.auth.username, "DynamicsWebApi.setConfig", "config.proxy.auth.username");
-          ErrorHelper.stringParameterCheck(config.proxy.auth.password, "DynamicsWebApi.setConfig", "config.proxy.auth.password");
+          ErrorHelper.parameterCheck(config.proxy.auth, FUNCTION_NAME, "config.proxy.auth");
+          ErrorHelper.stringParameterCheck(config.proxy.auth.username, FUNCTION_NAME, "config.proxy.auth.username");
+          ErrorHelper.stringParameterCheck(config.proxy.auth.password, FUNCTION_NAME, "config.proxy.auth.password");
         }
       }
       internalConfig.proxy = config.proxy;
@@ -1092,6 +1112,10 @@ var composeUrl = (request, config, url = "", joinSymbol = "&") => {
     if (request.isBatch) {
       ErrorHelper.boolParameterCheck(request.isBatch, `DynamicsWebApi.${request.functionName}`, "request.isBatch");
     }
+    if (request.fetchXml) {
+      ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
+      queryArray.push("fetchXml=" + encodeURIComponent(request.fetchXml));
+    }
     if (!isNull(request.inChangeSet)) {
       ErrorHelper.boolParameterCheck(request.inChangeSet, `DynamicsWebApi.${request.functionName}`, "request.inChangeSet");
     }
@@ -1113,7 +1137,7 @@ var composeUrl = (request, config, url = "", joinSymbol = "&") => {
           };
           let expandConverted = composeUrl(expandRequest, config, "", ";");
           if (expandConverted) {
-            expandConverted = `(${expandConverted.slice(1)})`;
+            expandConverted = `(${expandConverted})`;
           }
           expandQueryArray.push(property + expandConverted);
         }
@@ -1123,7 +1147,13 @@ var composeUrl = (request, config, url = "", joinSymbol = "&") => {
       }
     }
   }
-  return !queryArray.length ? url : url + "?" + queryArray.join(joinSymbol);
+  if (!queryArray.length) {
+    return url;
+  }
+  if (joinSymbol === "&") {
+    url += "?";
+  }
+  return url + queryArray.join(joinSymbol);
 };
 
 // src/client/request/composers/headers.ts
@@ -1257,24 +1287,24 @@ var composeHeaders = (request, config) => {
 // src/client/request/composers/request.ts
 init_ErrorHelper();
 var composeRequest = (request, config) => {
-  request.path = request.path || "";
+  request.path = "";
   request.functionName = request.functionName || "";
   if (!request.url) {
     if (!request._isUnboundRequest && !request.contentId && !request.collection) {
       ErrorHelper.parameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
     }
-    if (request.collection != null) {
-      ErrorHelper.stringParameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
-      request.path = request.collection;
-      if (request.key) {
-        request.key = ErrorHelper.keyParameterCheck(request.key, `DynamicsWebApi.${request.functionName}`, "request.key");
-        request.path += `(${request.key})`;
-      }
-    }
     if (request.contentId) {
       ErrorHelper.stringParameterCheck(request.contentId, `DynamicsWebApi.${request.functionName}`, "request.contentId");
       if (request.contentId.startsWith("$")) {
-        request.path = request.path ? `${request.contentId}/${request.path}` : request.contentId;
+        request.path = request.contentId;
+      }
+    }
+    if (request.collection != null) {
+      ErrorHelper.stringParameterCheck(request.collection, `DynamicsWebApi.${request.functionName}`, "request.collection");
+      request.path += request.path ? `/${request.collection}` : request.collection;
+      if (request.key) {
+        request.key = ErrorHelper.keyParameterCheck(request.key, `DynamicsWebApi.${request.functionName}`, "request.key");
+        request.path += `(${request.key})`;
       }
     }
     if (request.addPath) {
@@ -1284,11 +1314,6 @@ var composeRequest = (request, config) => {
       request.path += request.addPath;
     }
     request.path = composeUrl(request, config, request.path);
-    if (request.fetchXml) {
-      ErrorHelper.stringParameterCheck(request.fetchXml, `DynamicsWebApi.${request.functionName}`, "request.fetchXml");
-      let join = request.path.indexOf("?") === -1 ? "?" : "&";
-      request.path += `${join}fetchXml=${encodeURIComponent(request.fetchXml)}`;
-    }
   } else {
     ErrorHelper.stringParameterCheck(request.url, `DynamicsWebApi.${request.functionName}`, "request.url");
     request.path = request.url.replace(config.dataApi.url, "");
@@ -1631,18 +1656,13 @@ _batchRequestId = new WeakMap();
 // src/requests/associate.ts
 init_ErrorHelper();
 init_Utility();
-
-// src/requests/constants.ts
-var LIBRARY_NAME = "DynamicsWebApi";
-
-// src/requests/associate.ts
-var FUNCTION_NAME = "associate";
-var REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
+var FUNCTION_NAME2 = "associate";
+var REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME2}`;
 var associate = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME, "request");
   let internalRequest = copyRequest(request);
   internalRequest.method = "POST";
-  internalRequest.functionName = FUNCTION_NAME;
+  internalRequest.functionName = FUNCTION_NAME2;
   ErrorHelper.stringParameterCheck(request.relatedCollection, REQUEST_NAME, "request.relatedcollection");
   ErrorHelper.stringParameterCheck(request.relationshipName, REQUEST_NAME, "request.relationshipName");
   const primaryKey = ErrorHelper.keyParameterCheck(request.primaryKey, REQUEST_NAME, "request.primaryKey");
@@ -1656,13 +1676,13 @@ var associate = async (request, client) => {
 // src/requests/associateSingleValued.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME2 = "associateSingleValued";
-var REQUEST_NAME2 = `${LIBRARY_NAME}.${FUNCTION_NAME2}`;
+var FUNCTION_NAME3 = "associateSingleValued";
+var REQUEST_NAME2 = `${LIBRARY_NAME}.${FUNCTION_NAME3}`;
 var associateSingleValued = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME2, "request");
   let internalRequest = copyRequest(request);
   internalRequest.method = "PUT";
-  internalRequest.functionName = FUNCTION_NAME2;
+  internalRequest.functionName = FUNCTION_NAME3;
   const primaryKey = ErrorHelper.keyParameterCheck(request.primaryKey, REQUEST_NAME2, "request.primaryKey");
   const relatedKey = ErrorHelper.keyParameterCheck(request.relatedKey, REQUEST_NAME2, "request.relatedKey");
   ErrorHelper.stringParameterCheck(request.navigationProperty, REQUEST_NAME2, "request.navigationProperty");
@@ -1676,14 +1696,14 @@ var associateSingleValued = async (request, client) => {
 // src/requests/callAction.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME3 = "callAction";
-var REQUEST_NAME3 = `${LIBRARY_NAME}.${FUNCTION_NAME3}`;
+var FUNCTION_NAME4 = "callAction";
+var REQUEST_NAME3 = `${LIBRARY_NAME}.${FUNCTION_NAME4}`;
 var callAction = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME3, "request");
   ErrorHelper.stringParameterCheck(request.actionName, REQUEST_NAME3, "request.actionName");
   const internalRequest = copyRequest(request, ["action"]);
   internalRequest.method = "POST";
-  internalRequest.functionName = FUNCTION_NAME3;
+  internalRequest.functionName = FUNCTION_NAME4;
   internalRequest.addPath = request.actionName;
   internalRequest._isUnboundRequest = !internalRequest.collection;
   internalRequest.data = request.action;
@@ -1694,8 +1714,8 @@ var callAction = async (request, client) => {
 // src/requests/callFunction.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME4 = "callFunction";
-var REQUEST_NAME4 = `${LIBRARY_NAME}.${FUNCTION_NAME4}`;
+var FUNCTION_NAME5 = "callFunction";
+var REQUEST_NAME4 = `${LIBRARY_NAME}.${FUNCTION_NAME5}`;
 var callFunction = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME4, "request");
   const getFunctionName = (request2) => request2.name || request2.functionName;
@@ -1709,7 +1729,7 @@ var callFunction = async (request, client) => {
   internalRequest.addPath = functionName + functionParameters.key;
   internalRequest.queryParams = functionParameters.queryParams;
   internalRequest._isUnboundRequest = !internalRequest.collection;
-  internalRequest.functionName = FUNCTION_NAME4;
+  internalRequest.functionName = FUNCTION_NAME5;
   const response = await client.makeRequest(internalRequest);
   return response == null ? void 0 : response.data;
 };
@@ -1717,14 +1737,14 @@ var callFunction = async (request, client) => {
 // src/requests/create.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME5 = "create";
-var REQUEST_NAME5 = `${LIBRARY_NAME}.${FUNCTION_NAME5}`;
+var FUNCTION_NAME6 = "create";
+var REQUEST_NAME5 = `${LIBRARY_NAME}.${FUNCTION_NAME6}`;
 var create = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME5, "request");
   let internalRequest;
   if (!request.functionName) {
     internalRequest = copyRequest(request);
-    internalRequest.functionName = FUNCTION_NAME5;
+    internalRequest.functionName = FUNCTION_NAME6;
   } else internalRequest = request;
   internalRequest.method = "POST";
   const response = await client.makeRequest(internalRequest);
@@ -1734,14 +1754,14 @@ var create = async (request, client) => {
 // src/requests/count.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME6 = "count";
-var REQUEST_NAME6 = `${LIBRARY_NAME}.${FUNCTION_NAME6}`;
+var FUNCTION_NAME7 = "count";
+var REQUEST_NAME6 = `${LIBRARY_NAME}.${FUNCTION_NAME7}`;
 var count = async (request, client) => {
   var _a2;
   ErrorHelper.parameterCheck(request, REQUEST_NAME6, "request");
   const internalRequest = copyRequest(request);
   internalRequest.method = "GET";
-  internalRequest.functionName = FUNCTION_NAME6;
+  internalRequest.functionName = FUNCTION_NAME7;
   if ((_a2 = internalRequest.filter) == null ? void 0 : _a2.length) {
     internalRequest.count = true;
   } else {
@@ -1761,14 +1781,14 @@ init_ErrorHelper();
 // src/requests/retrieveMultiple.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME7 = "retrieveMultiple";
-var REQUEST_NAME7 = `${LIBRARY_NAME}.${FUNCTION_NAME7}`;
+var FUNCTION_NAME8 = "retrieveMultiple";
+var REQUEST_NAME7 = `${LIBRARY_NAME}.${FUNCTION_NAME8}`;
 var retrieveMultiple = async (request, client, nextPageLink) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME7, "request");
   let internalRequest;
   if (!request.functionName) {
     internalRequest = copyRequest(request);
-    internalRequest.functionName = FUNCTION_NAME7;
+    internalRequest.functionName = FUNCTION_NAME8;
   } else internalRequest = request;
   internalRequest.method = "GET";
   if (nextPageLink) {
@@ -1780,8 +1800,8 @@ var retrieveMultiple = async (request, client, nextPageLink) => {
 };
 
 // src/requests/retrieveAll.ts
-var FUNCTION_NAME8 = "retrieveAll";
-var REQUEST_NAME8 = `${LIBRARY_NAME}.${FUNCTION_NAME8}`;
+var FUNCTION_NAME9 = "retrieveAll";
+var REQUEST_NAME8 = `${LIBRARY_NAME}.${FUNCTION_NAME9}`;
 var retrieveAllRequest = async (request, client, nextPageLink, records = []) => {
   const response = await retrieveMultiple(request, client, nextPageLink);
   records = records.concat(response.value);
@@ -1802,25 +1822,25 @@ var retrieveAll = (request, client) => {
 };
 
 // src/requests/countAll.ts
-var FUNCTION_NAME9 = "countAll";
-var REQUEST_NAME9 = `${LIBRARY_NAME}.${FUNCTION_NAME9}`;
+var FUNCTION_NAME10 = "countAll";
+var REQUEST_NAME9 = `${LIBRARY_NAME}.${FUNCTION_NAME10}`;
 var countAll = async (request, client) => {
   ErrorHelper.throwBatchIncompatible(REQUEST_NAME9, client.isBatch);
   ErrorHelper.parameterCheck(request, REQUEST_NAME9, "request");
   const response = await retrieveAllRequest(request, client);
-  return response ? response.value ? response.value.length : 0 : 0;
+  return response.value.length;
 };
 
 // src/requests/disassociate.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME10 = "disassociate";
-var REQUEST_NAME10 = `${LIBRARY_NAME}.${FUNCTION_NAME10}`;
+var FUNCTION_NAME11 = "disassociate";
+var REQUEST_NAME10 = `${LIBRARY_NAME}.${FUNCTION_NAME11}`;
 var disassociate = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME10, "request");
   let internalRequest = copyRequest(request);
   internalRequest.method = "DELETE";
-  internalRequest.functionName = FUNCTION_NAME10;
+  internalRequest.functionName = FUNCTION_NAME11;
   ErrorHelper.stringParameterCheck(request.relationshipName, REQUEST_NAME10, "request.relationshipName");
   const primaryKey = ErrorHelper.keyParameterCheck(request.primaryKey, REQUEST_NAME10, "request.primaryKey");
   const relatedKey = ErrorHelper.keyParameterCheck(request.relatedKey, REQUEST_NAME10, "request.relatedId");
@@ -1832,13 +1852,13 @@ var disassociate = async (request, client) => {
 // src/requests/disassociateSingleValued.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME11 = "disassociateSingleValued";
-var REQUEST_NAME11 = `${LIBRARY_NAME}.${FUNCTION_NAME11}`;
+var FUNCTION_NAME12 = "disassociateSingleValued";
+var REQUEST_NAME11 = `${LIBRARY_NAME}.${FUNCTION_NAME12}`;
 var disassociateSingleValued = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME11, "request");
   let internalRequest = copyRequest(request);
   internalRequest.method = "DELETE";
-  internalRequest.functionName = FUNCTION_NAME11;
+  internalRequest.functionName = FUNCTION_NAME12;
   ErrorHelper.stringParameterCheck(request.navigationProperty, REQUEST_NAME11, "request.navigationProperty");
   const primaryKey = ErrorHelper.keyParameterCheck(request.primaryKey, REQUEST_NAME11, "request.primaryKey");
   internalRequest.navigationProperty += "/$ref";
@@ -1849,15 +1869,15 @@ var disassociateSingleValued = async (request, client) => {
 // src/requests/retrieve.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME12 = "retrieve";
-var REQUEST_NAME12 = `${LIBRARY_NAME}.${FUNCTION_NAME12}`;
+var FUNCTION_NAME13 = "retrieve";
+var REQUEST_NAME12 = `${LIBRARY_NAME}.${FUNCTION_NAME13}`;
 var retrieve = async (request, client) => {
   var _a2;
   ErrorHelper.parameterCheck(request, REQUEST_NAME12, "request");
   let internalRequest;
   if (!request.functionName) {
     internalRequest = copyRequest(request);
-    internalRequest.functionName = FUNCTION_NAME12;
+    internalRequest.functionName = FUNCTION_NAME13;
   } else internalRequest = request;
   internalRequest.method = "GET";
   internalRequest.responseParameters = {
@@ -1871,13 +1891,13 @@ var retrieve = async (request, client) => {
 init_ErrorHelper();
 init_Regex();
 init_Utility();
-var FUNCTION_NAME13 = "fetch";
-var REQUEST_NAME13 = `${LIBRARY_NAME}.${FUNCTION_NAME13}`;
+var FUNCTION_NAME14 = "fetch";
+var REQUEST_NAME13 = `${LIBRARY_NAME}.${FUNCTION_NAME14}`;
 var fetchXml = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME13, "request");
   const internalRequest = copyRequest(request);
   internalRequest.method = "GET";
-  internalRequest.functionName = FUNCTION_NAME13;
+  internalRequest.functionName = FUNCTION_NAME14;
   ErrorHelper.stringParameterCheck(internalRequest.fetchXml, REQUEST_NAME13, "request.fetchXml");
   if (internalRequest.fetchXml && !FETCH_XML_TOP_REGEX.test(internalRequest.fetchXml)) {
     let replacementString = "";
@@ -1899,8 +1919,8 @@ var fetchXml = async (request, client) => {
 
 // src/requests/fetchXmlAll.ts
 init_ErrorHelper();
-var FUNCTION_NAME14 = "fetchAll";
-var REQUEST_NAME14 = `${LIBRARY_NAME}.${FUNCTION_NAME14}`;
+var FUNCTION_NAME15 = "fetchAll";
+var REQUEST_NAME14 = `${LIBRARY_NAME}.${FUNCTION_NAME15}`;
 var executeFetchXmlAll = async (request, client, records = []) => {
   const response = await fetchXml(request, client);
   records = records.concat(response.value);
@@ -1921,14 +1941,14 @@ var fetchXmlAll = async (request, client) => {
 init_ErrorHelper();
 init_Regex();
 init_Utility();
-var FUNCTION_NAME15 = "update";
-var REQUEST_NAME15 = `${LIBRARY_NAME}.${FUNCTION_NAME15}`;
+var FUNCTION_NAME16 = "update";
+var REQUEST_NAME15 = `${LIBRARY_NAME}.${FUNCTION_NAME16}`;
 var update = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME15, "request");
   let internalRequest;
   if (!request.functionName) {
     internalRequest = copyRequest(request);
-    internalRequest.functionName = FUNCTION_NAME15;
+    internalRequest.functionName = FUNCTION_NAME16;
   } else internalRequest = request;
   internalRequest.method ?? (internalRequest.method = getUpdateMethod(internalRequest.collection));
   internalRequest.responseParameters = { valueIfEmpty: true };
@@ -1948,8 +1968,8 @@ var update = async (request, client) => {
 // src/requests/updateSingleProperty.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME16 = "updateSingleProperty";
-var REQUEST_NAME16 = `${LIBRARY_NAME}.${FUNCTION_NAME16}`;
+var FUNCTION_NAME17 = "updateSingleProperty";
+var REQUEST_NAME16 = `${LIBRARY_NAME}.${FUNCTION_NAME17}`;
 var updateSingleProperty = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME16, "request");
   ErrorHelper.parameterCheck(request.fieldValuePair, REQUEST_NAME16, "request.fieldValuePair");
@@ -1958,7 +1978,7 @@ var updateSingleProperty = async (request, client) => {
   const internalRequest = copyRequest(request);
   internalRequest.navigationProperty = field;
   internalRequest.data = { value: fieldValue };
-  internalRequest.functionName = FUNCTION_NAME16;
+  internalRequest.functionName = FUNCTION_NAME17;
   internalRequest.method = "PUT";
   delete internalRequest["fieldValuePair"];
   const response = await client.makeRequest(internalRequest);
@@ -1968,13 +1988,13 @@ var updateSingleProperty = async (request, client) => {
 // src/requests/upsert.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME17 = "upsert";
-var REQUEST_NAME17 = `${LIBRARY_NAME}.${FUNCTION_NAME17}`;
+var FUNCTION_NAME18 = "upsert";
+var REQUEST_NAME17 = `${LIBRARY_NAME}.${FUNCTION_NAME18}`;
 var upsert = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME17, "request");
   const internalRequest = copyRequest(request);
   internalRequest.method = "PATCH";
-  internalRequest.functionName = FUNCTION_NAME17;
+  internalRequest.functionName = FUNCTION_NAME18;
   const ifnonematch = internalRequest.ifnonematch;
   const ifmatch = internalRequest.ifmatch;
   try {
@@ -1993,14 +2013,14 @@ var upsert = async (request, client) => {
 // src/requests/delete.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME18 = "deleteRecord";
-var REQUEST_NAME18 = `${LIBRARY_NAME}.${FUNCTION_NAME18}`;
+var FUNCTION_NAME19 = "deleteRecord";
+var REQUEST_NAME18 = `${LIBRARY_NAME}.${FUNCTION_NAME19}`;
 var deleteRecord = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME18, "request");
   let internalRequest;
   if (!request.functionName) {
     internalRequest = copyRequest(request);
-    internalRequest.functionName = FUNCTION_NAME18;
+    internalRequest.functionName = FUNCTION_NAME19;
   } else internalRequest = request;
   internalRequest.method = "DELETE";
   internalRequest.responseParameters = { valueIfEmpty: true };
@@ -2019,8 +2039,8 @@ var deleteRecord = async (request, client) => {
 // src/requests/uploadFile.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME19 = "uploadFile";
-var REQUEST_NAME19 = `${LIBRARY_NAME}.${FUNCTION_NAME19}`;
+var FUNCTION_NAME20 = "uploadFile";
+var REQUEST_NAME19 = `${LIBRARY_NAME}.${FUNCTION_NAME20}`;
 var _uploadFileChunk = async (request, client, fileBytes, chunkSize, offset = 0) => {
   setFileChunk(request, fileBytes, chunkSize, offset);
   await client.makeRequest(request);
@@ -2034,7 +2054,7 @@ var uploadFile = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME19, "request");
   const internalRequest = copyRequest(request, ["data"]);
   internalRequest.method = "PATCH";
-  internalRequest.functionName = FUNCTION_NAME19;
+  internalRequest.functionName = FUNCTION_NAME20;
   internalRequest.transferMode = "chunked";
   const response = await client.makeRequest(internalRequest);
   internalRequest.url = response == null ? void 0 : response.data.location;
@@ -2048,8 +2068,8 @@ var uploadFile = async (request, client) => {
 // src/requests/downloadFile.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME20 = "downloadFile";
-var REQUEST_NAME20 = `${LIBRARY_NAME}.${FUNCTION_NAME20}`;
+var FUNCTION_NAME21 = "downloadFile";
+var REQUEST_NAME20 = `${LIBRARY_NAME}.${FUNCTION_NAME21}`;
 var downloadFileChunk = async (request, client, bytesDownloaded = 0, data = "") => {
   request.range = "bytes=" + bytesDownloaded + "-" + (bytesDownloaded + downloadChunkSize - 1);
   request.downloadSize = "full";
@@ -2071,7 +2091,7 @@ var downloadFile = (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME20, "request");
   const internalRequest = copyRequest(request);
   internalRequest.method = "GET";
-  internalRequest.functionName = FUNCTION_NAME20;
+  internalRequest.functionName = FUNCTION_NAME21;
   internalRequest.responseParameters = { parse: true };
   return downloadFileChunk(internalRequest, client);
 };
@@ -2079,8 +2099,8 @@ var downloadFile = (request, client) => {
 // src/requests/executeBatch.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME21 = "executeBatch";
-var REQUEST_NAME21 = `${LIBRARY_NAME}.${FUNCTION_NAME21}`;
+var FUNCTION_NAME22 = "executeBatch";
+var REQUEST_NAME21 = `${LIBRARY_NAME}.${FUNCTION_NAME22}`;
 async function executeBatch(request, client) {
   ErrorHelper.throwBatchNotStarted(client.isBatch);
   const internalRequest = !request ? {} : copyRequest(request);
@@ -2101,28 +2121,28 @@ function startBatch(client) {
 // src/requests/metadata/createEntity.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME22 = "createEntity";
-var REQUEST_NAME22 = `${LIBRARY_NAME}.${FUNCTION_NAME22}`;
+var FUNCTION_NAME23 = "createEntity";
+var REQUEST_NAME22 = `${LIBRARY_NAME}.${FUNCTION_NAME23}`;
 var createEntity = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME22, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME22, "request.data");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME22;
+  internalRequest.functionName = FUNCTION_NAME23;
   return create(internalRequest, client);
 };
 
 // src/requests/metadata/updateEntity.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME23 = "updateEntity";
-var REQUEST_NAME23 = `${LIBRARY_NAME}.${FUNCTION_NAME23}`;
+var FUNCTION_NAME24 = "updateEntity";
+var REQUEST_NAME23 = `${LIBRARY_NAME}.${FUNCTION_NAME24}`;
 var updateEntity = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME23, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME23, "request.data");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME23;
+  internalRequest.functionName = FUNCTION_NAME24;
   internalRequest.key = internalRequest.data.MetadataId;
   internalRequest.method = "PUT";
   return await update(internalRequest, client);
@@ -2131,8 +2151,8 @@ var updateEntity = async (request, client) => {
 // src/requests/metadata/retrieveEntity.ts
 init_ErrorHelper();
 init_Utility();
-var FUNCTION_NAME24 = "retrieveEntity";
-var REQUEST_NAME24 = `${LIBRARY_NAME}.${FUNCTION_NAME24}`;
+var FUNCTION_NAME25 = "retrieveEntity";
+var REQUEST_NAME24 = `${LIBRARY_NAME}.${FUNCTION_NAME25}`;
 var retrieveEntity = async (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME24, "request");
   ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME24, "request.key");
@@ -2144,26 +2164,26 @@ var retrieveEntity = async (request, client) => {
 
 // src/requests/metadata/retrieveEntities.ts
 init_Utility();
-var FUNCTION_NAME25 = "retrieveEntities";
+var FUNCTION_NAME26 = "retrieveEntities";
 var retrieveEntities = (client, request) => {
   const internalRequest = !request ? {} : copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME25;
+  internalRequest.functionName = FUNCTION_NAME26;
   return retrieveMultiple(internalRequest, client);
 };
 
 // src/requests/metadata/createAttribute.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME26 = "createAttribute";
-var REQUEST_NAME25 = `${LIBRARY_NAME}.${FUNCTION_NAME26}`;
+var FUNCTION_NAME27 = "createAttribute";
+var REQUEST_NAME25 = `${LIBRARY_NAME}.${FUNCTION_NAME27}`;
 var createAttribute = (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME25, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME25, "request.data");
   ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME25, "request.entityKey");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME26;
+  internalRequest.functionName = FUNCTION_NAME27;
   internalRequest.navigationProperty = "Attributes";
   internalRequest.key = request.entityKey;
   return create(internalRequest, client);
@@ -2172,8 +2192,8 @@ var createAttribute = (request, client) => {
 // src/requests/metadata/updateAttribute.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME27 = "updateAttribute";
-var REQUEST_NAME26 = `${LIBRARY_NAME}.${FUNCTION_NAME27}`;
+var FUNCTION_NAME28 = "updateAttribute";
+var REQUEST_NAME26 = `${LIBRARY_NAME}.${FUNCTION_NAME28}`;
 var updateAttribute = (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME26, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME26, "request.data");
@@ -2181,7 +2201,7 @@ var updateAttribute = (request, client) => {
   ErrorHelper.guidParameterCheck(request.data.MetadataId, REQUEST_NAME26, "request.data.MetadataId");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME27;
+  internalRequest.functionName = FUNCTION_NAME28;
   internalRequest.navigationProperty = "Attributes";
   internalRequest.navigationPropertyKey = request.data.MetadataId;
   internalRequest.metadataAttributeType = request.castType;
@@ -2193,8 +2213,8 @@ var updateAttribute = (request, client) => {
 // src/requests/metadata/retrieveAttributes.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME28 = "retrieveAttributes";
-var REQUEST_NAME27 = `${LIBRARY_NAME}.${FUNCTION_NAME28}`;
+var FUNCTION_NAME29 = "retrieveAttributes";
+var REQUEST_NAME27 = `${LIBRARY_NAME}.${FUNCTION_NAME29}`;
 var retrieveAttributes = (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME27, "request");
   ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME27, "request.entityKey");
@@ -2203,7 +2223,7 @@ var retrieveAttributes = (request, client) => {
   }
   const internalRequest = copyRequest(request);
   internalRequest.collection = "EntityDefinitions";
-  internalRequest.functionName = FUNCTION_NAME28;
+  internalRequest.functionName = FUNCTION_NAME29;
   internalRequest.navigationProperty = "Attributes";
   internalRequest.key = request.entityKey;
   internalRequest.metadataAttributeType = request.castType;
@@ -2213,8 +2233,8 @@ var retrieveAttributes = (request, client) => {
 // src/requests/metadata/retrieveAttribute.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME29 = "retrieveAttributes";
-var REQUEST_NAME28 = `${LIBRARY_NAME}.${FUNCTION_NAME29}`;
+var FUNCTION_NAME30 = "retrieveAttributes";
+var REQUEST_NAME28 = `${LIBRARY_NAME}.${FUNCTION_NAME30}`;
 var retrieveAttribute = (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME28, "request");
   ErrorHelper.keyParameterCheck(request.entityKey, REQUEST_NAME28, "request.entityKey");
@@ -2228,29 +2248,29 @@ var retrieveAttribute = (request, client) => {
   internalRequest.navigationPropertyKey = request.attributeKey;
   internalRequest.metadataAttributeType = request.castType;
   internalRequest.key = request.entityKey;
-  internalRequest.functionName = FUNCTION_NAME29;
+  internalRequest.functionName = FUNCTION_NAME30;
   return retrieve(internalRequest, client);
 };
 
 // src/requests/metadata/createRelationship.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME30 = "createRelationship";
-var REQUEST_NAME29 = `${LIBRARY_NAME}.${FUNCTION_NAME30}`;
+var FUNCTION_NAME31 = "createRelationship";
+var REQUEST_NAME29 = `${LIBRARY_NAME}.${FUNCTION_NAME31}`;
 var createRelationship = (request, client) => {
   ErrorHelper.parameterCheck(request, REQUEST_NAME29, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME29, "request.data");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "RelationshipDefinitions";
-  internalRequest.functionName = FUNCTION_NAME30;
+  internalRequest.functionName = FUNCTION_NAME31;
   return create(internalRequest, client);
 };
 
 // src/requests/metadata/updateRelationship.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME31 = "updateRelationship";
-var REQUEST_NAME30 = `${LIBRARY_NAME}.${FUNCTION_NAME31}`;
+var FUNCTION_NAME32 = "updateRelationship";
+var REQUEST_NAME30 = `${LIBRARY_NAME}.${FUNCTION_NAME32}`;
 function updateRelationship(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME30, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME30, "request.data");
@@ -2262,7 +2282,7 @@ function updateRelationship(request, client) {
   internalRequest.collection = "RelationshipDefinitions";
   internalRequest.key = request.data.MetadataId;
   internalRequest.navigationProperty = request.castType;
-  internalRequest.functionName = FUNCTION_NAME31;
+  internalRequest.functionName = FUNCTION_NAME32;
   internalRequest.method = "PUT";
   return update(internalRequest, client);
 }
@@ -2270,26 +2290,26 @@ function updateRelationship(request, client) {
 // src/requests/metadata/deleteRelationship.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME32 = "deleteRelationship";
-var REQUEST_NAME31 = `${LIBRARY_NAME}.${FUNCTION_NAME32}`;
+var FUNCTION_NAME33 = "deleteRelationship";
+var REQUEST_NAME31 = `${LIBRARY_NAME}.${FUNCTION_NAME33}`;
 async function deleteRelationship(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME31, "request");
   ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME31, "request.key");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "RelationshipDefinitions";
-  internalRequest.functionName = FUNCTION_NAME32;
+  internalRequest.functionName = FUNCTION_NAME33;
   return deleteRecord(internalRequest, client);
 }
 
 // src/requests/metadata/retrieveRelationships.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME33 = "retrieveRelationships";
-var REQUEST_NAME32 = `DynamicsWebApi.${FUNCTION_NAME33}`;
+var FUNCTION_NAME34 = "retrieveRelationships";
+var REQUEST_NAME32 = `DynamicsWebApi.${FUNCTION_NAME34}`;
 async function retrieveRelationships(request, client) {
   const internalRequest = !request ? {} : copyRequest(request);
   internalRequest.collection = "RelationshipDefinitions";
-  internalRequest.functionName = FUNCTION_NAME33;
+  internalRequest.functionName = FUNCTION_NAME34;
   if (request) {
     if (request.castType) {
       ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME32, "request.castType");
@@ -2302,8 +2322,8 @@ async function retrieveRelationships(request, client) {
 // src/requests/metadata/retrieveRelationship.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME34 = "retrieveRelationship";
-var REQUEST_NAME33 = `DynamicsWebApi.${FUNCTION_NAME34}`;
+var FUNCTION_NAME35 = "retrieveRelationship";
+var REQUEST_NAME33 = `DynamicsWebApi.${FUNCTION_NAME35}`;
 async function retrieveRelationship(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME33, "request");
   ErrorHelper.keyParameterCheck(request.key, REQUEST_NAME33, "request.key");
@@ -2313,29 +2333,29 @@ async function retrieveRelationship(request, client) {
   const internalRequest = copyRequest(request);
   internalRequest.collection = "RelationshipDefinitions";
   internalRequest.navigationProperty = request.castType;
-  internalRequest.functionName = FUNCTION_NAME34;
+  internalRequest.functionName = FUNCTION_NAME35;
   return retrieve(internalRequest, client);
 }
 
 // src/requests/metadata/createGlobalOptionSet.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME35 = "createGlobalOptionSet";
-var REQUEST_NAME34 = `DynamicsWebApi.${FUNCTION_NAME35}`;
+var FUNCTION_NAME36 = "createGlobalOptionSet";
+var REQUEST_NAME34 = `DynamicsWebApi.${FUNCTION_NAME36}`;
 async function createGlobalOptionSet(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME34, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME34, "request.data");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "GlobalOptionSetDefinitions";
-  internalRequest.functionName = FUNCTION_NAME35;
+  internalRequest.functionName = FUNCTION_NAME36;
   return create(internalRequest, client);
 }
 
 // src/requests/metadata/updateGlobalOptionSet.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME36 = "updateGlobalOptionSet";
-var REQUEST_NAME35 = `DynamicsWebApi.${FUNCTION_NAME36}`;
+var FUNCTION_NAME37 = "updateGlobalOptionSet";
+var REQUEST_NAME35 = `DynamicsWebApi.${FUNCTION_NAME37}`;
 async function updateGlobalOptionSet(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME35, "request");
   ErrorHelper.parameterCheck(request.data, REQUEST_NAME35, "request.data");
@@ -2346,7 +2366,7 @@ async function updateGlobalOptionSet(request, client) {
   const internalRequest = copyRequest(request);
   internalRequest.collection = "GlobalOptionSetDefinitions";
   internalRequest.key = request.data.MetadataId;
-  internalRequest.functionName = FUNCTION_NAME36;
+  internalRequest.functionName = FUNCTION_NAME37;
   internalRequest.method = "PUT";
   return update(internalRequest, client);
 }
@@ -2354,21 +2374,21 @@ async function updateGlobalOptionSet(request, client) {
 // src/requests/metadata/deleteGlobalOptionSet.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME37 = "deleteGlobalOptionSet";
-var REQUEST_NAME36 = `DynamicsWebApi.${FUNCTION_NAME37}`;
+var FUNCTION_NAME38 = "deleteGlobalOptionSet";
+var REQUEST_NAME36 = `DynamicsWebApi.${FUNCTION_NAME38}`;
 async function deleteGlobalOptionSet(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME36, "request");
   const internalRequest = copyRequest(request);
   internalRequest.collection = "GlobalOptionSetDefinitions";
-  internalRequest.functionName = FUNCTION_NAME37;
+  internalRequest.functionName = FUNCTION_NAME38;
   return deleteRecord(internalRequest, client);
 }
 
 // src/requests/metadata/retrieveGlobalOptionSet.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME38 = "retrieveGlobalOptionSet";
-var REQUEST_NAME37 = `DynamicsWebApi.${FUNCTION_NAME38}`;
+var FUNCTION_NAME39 = "retrieveGlobalOptionSet";
+var REQUEST_NAME37 = `DynamicsWebApi.${FUNCTION_NAME39}`;
 async function retrieveGlobalOptionSet(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME37, "request");
   if (request.castType) {
@@ -2377,19 +2397,19 @@ async function retrieveGlobalOptionSet(request, client) {
   const internalRequest = copyRequest(request);
   internalRequest.collection = "GlobalOptionSetDefinitions";
   internalRequest.navigationProperty = request.castType;
-  internalRequest.functionName = FUNCTION_NAME38;
+  internalRequest.functionName = FUNCTION_NAME39;
   return retrieve(internalRequest, client);
 }
 
 // src/requests/metadata/retrieveGlobalOptionSets.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME39 = "retrieveGlobalOptionSets";
-var REQUEST_NAME38 = `DynamicsWebApi.${FUNCTION_NAME39}`;
+var FUNCTION_NAME40 = "retrieveGlobalOptionSets";
+var REQUEST_NAME38 = `DynamicsWebApi.${FUNCTION_NAME40}`;
 async function retrieveGlobalOptionSets(request, client) {
   const internalRequest = !request ? {} : copyRequest(request);
   internalRequest.collection = "GlobalOptionSetDefinitions";
-  internalRequest.functionName = FUNCTION_NAME39;
+  internalRequest.functionName = FUNCTION_NAME40;
   if (request == null ? void 0 : request.castType) {
     ErrorHelper.stringParameterCheck(request.castType, REQUEST_NAME38, "request.castType");
     internalRequest.navigationProperty = request.castType;
@@ -2400,12 +2420,12 @@ async function retrieveGlobalOptionSets(request, client) {
 // src/requests/metadata/retrieveCsdlMetadata.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME40 = "retrieveCsdlMetadata";
-var REQUEST_NAME39 = `DynamicsWebApi.${FUNCTION_NAME40}`;
+var FUNCTION_NAME41 = "retrieveCsdlMetadata";
+var REQUEST_NAME39 = `DynamicsWebApi.${FUNCTION_NAME41}`;
 async function retrieveCsdlMetadata(request, client) {
   const internalRequest = !request ? {} : copyRequest(request);
   internalRequest.collection = "$metadata";
-  internalRequest.functionName = FUNCTION_NAME40;
+  internalRequest.functionName = FUNCTION_NAME41;
   if (request == null ? void 0 : request.addAnnotations) {
     ErrorHelper.boolParameterCheck(request.addAnnotations, REQUEST_NAME39, "request.addAnnotations");
     internalRequest.includeAnnotations = "*";
@@ -2417,8 +2437,132 @@ async function retrieveCsdlMetadata(request, client) {
 // src/requests/search/query.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME41 = "search";
-var REQUEST_NAME40 = `${LIBRARY_NAME}.${FUNCTION_NAME41}`;
+
+// src/requests/search/convertSearchQuery.ts
+init_Regex();
+function convertSearchQuery(query2, functionName, config) {
+  var _a2;
+  if (!query2) return query2;
+  if ((config == null ? void 0 : config.escapeSpecialCharacters) === true) {
+    query2.search = escapeSearchSpecialCharacters(query2.search);
+  }
+  if ((_a2 = query2.entities) == null ? void 0 : _a2.length) {
+    query2.entities = convertEntitiesProperty(query2.entities, config == null ? void 0 : config.version);
+  }
+  if (functionName === "query") {
+    convertQuery(query2, config == null ? void 0 : config.version);
+  }
+  return query2;
+}
+function convertEntitiesProperty(entities, version = "1.0") {
+  if (!entities) return entities;
+  if (typeof entities === "string") {
+    if (version !== "1.0") return entities;
+    try {
+      entities = JSON.parse(entities);
+    } catch {
+      throw new Error("The 'query.entities' property must be a valid JSON string.");
+    }
+    if (!Array.isArray(entities)) {
+      throw new Error("The 'query.entities' property must be an array of strings or objects.");
+    }
+  }
+  const toStringArray = (entity) => {
+    if (typeof entity === "string") return entity;
+    return entity.name;
+  };
+  const toSearchEntity = (entity) => {
+    if (typeof entity === "string") return { name: entity };
+    return entity;
+  };
+  const toReturn = entities.map((entity) => version === "1.0" ? toStringArray(entity) : toSearchEntity(entity));
+  if (version !== "1.0") return JSON.stringify(toReturn);
+  return toReturn;
+}
+function convertQuery(query2, version = "1.0") {
+  const toV1 = (query3) => {
+    if (query3.count != null) {
+      if (query3.returnTotalRecordCount == null) {
+        query3.returnTotalRecordCount = query3.count;
+      }
+      delete query3.count;
+    }
+    if (query3.options) {
+      if (typeof query3.options === "string") {
+        try {
+          query3.options = JSON.parse(query3.options);
+        } catch {
+          throw new Error("The 'query.options' property must be a valid JSON string.");
+        }
+      }
+      if (!query3.searchMode) {
+        query3.searchMode = query3.options.searchmode;
+      }
+      if (!query3.searchType) {
+        query3.searchType = query3.options.querytype === "lucene" ? "full" : query3.options.querytype;
+      }
+      delete query3.options;
+    }
+  };
+  const toV2 = (query3) => {
+    if (query3.returnTotalRecordCount != null) {
+      if (query3.count == null) {
+        query3.count = query3.returnTotalRecordCount;
+      }
+      delete query3.returnTotalRecordCount;
+    }
+    if (query3.searchMode || query3.searchType) {
+      if (typeof query3.options !== "string") {
+        if (!query3.options) query3.options = {};
+        if (!query3.options.searchmode) {
+          query3.options.searchmode = query3.searchMode;
+        }
+        if (!query3.options.querytype) {
+          query3.options.querytype = query3.searchType === "full" ? "lucene" : query3.searchType;
+        }
+      }
+      delete query3.searchMode;
+      delete query3.searchType;
+    }
+    if (query3.options && typeof query3.options !== "string") {
+      query3.options = JSON.stringify(query3.options);
+    }
+  };
+  version === "1.0" ? toV1(query2) : toV2(query2);
+}
+
+// src/requests/search/parsers/parseQueryResponse.ts
+function parseQueryResponse(queryResponse, config) {
+  if (!queryResponse) return queryResponse;
+  const toV1 = () => {
+    const responseValue = JSON.parse(queryResponse.response, dateReviver);
+    return {
+      ...queryResponse,
+      value: responseValue.Value,
+      facets: responseValue.Facets,
+      totalrecordcount: responseValue.Count,
+      querycontext: responseValue.QueryContext,
+      response: responseValue
+    };
+  };
+  const toV2 = () => {
+    return {
+      ...queryResponse,
+      response: {
+        Count: queryResponse.totalrecordcount,
+        Value: queryResponse.value,
+        Facets: queryResponse.facets,
+        QueryContext: queryResponse.querycontext,
+        Error: null
+      }
+    };
+  };
+  return (config == null ? void 0 : config.version) === "2.0" ? toV1() : toV2();
+}
+
+// src/requests/search/query.ts
+var FUNCTION_NAME42 = "query";
+var REQUEST_NAME40 = `${LIBRARY_NAME}.${FUNCTION_NAME42}`;
 async function query(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME40, "request");
   const _isObject = typeof request !== "string";
@@ -2428,57 +2572,121 @@ async function query(request, client) {
   ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME40, parameterName);
   ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, REQUEST_NAME40, parameterName, 100);
   internalRequest.collection = "query";
-  internalRequest.functionName = FUNCTION_NAME41;
+  internalRequest.functionName = FUNCTION_NAME42;
   internalRequest.method = "POST";
-  internalRequest.data = internalRequest.query;
+  internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME42, client.config.searchApi);
   internalRequest.apiConfig = client.config.searchApi;
   delete internalRequest.query;
   const response = await client.makeRequest(internalRequest);
-  return response == null ? void 0 : response.data;
+  return parseQueryResponse(response.data, client.config.searchApi);
 }
 
 // src/requests/search/suggest.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME42 = "suggest";
-var REQUEST_NAME41 = `${LIBRARY_NAME}.${FUNCTION_NAME42}`;
+
+// src/requests/search/parsers/parseSuggestResponse.ts
+function parseSuggestResponse(queryResponse, config) {
+  if (!queryResponse) return queryResponse;
+  const toV1 = () => {
+    var _a2;
+    const responseValue = JSON.parse(queryResponse.response, dateReviver);
+    (_a2 = responseValue.Value) == null ? void 0 : _a2.forEach((item) => {
+      item.document = item.Document;
+      item.text = item.Text;
+    });
+    return {
+      ...queryResponse,
+      value: responseValue.Value,
+      querycontext: responseValue.QueryContext,
+      response: responseValue
+    };
+  };
+  const toV2 = () => {
+    var _a2;
+    (_a2 = queryResponse.value) == null ? void 0 : _a2.forEach((item) => {
+      item.Document = item.document;
+      item.Text = item.text;
+    });
+    return {
+      ...queryResponse,
+      response: {
+        Value: queryResponse.value,
+        QueryContext: queryResponse.querycontext,
+        Error: null
+      }
+    };
+  };
+  return (config == null ? void 0 : config.version) === "2.0" ? toV1() : toV2();
+}
+
+// src/requests/search/suggest.ts
+var FUNCTION_NAME43 = "suggest";
+var REQUEST_NAME41 = `${LIBRARY_NAME}.${FUNCTION_NAME43}`;
 async function suggest(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME41, "request");
-  const _isObject = isObject(request);
+  const _isObject = typeof request !== "string";
   const parameterName = _isObject ? "request.query.search" : "term";
   const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
   ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME41, "request.query");
   ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME41, parameterName);
   ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, REQUEST_NAME41, parameterName, 100);
-  internalRequest.functionName = internalRequest.collection = "suggest";
+  internalRequest.functionName = internalRequest.collection = FUNCTION_NAME43;
   internalRequest.method = "POST";
-  internalRequest.data = internalRequest.query;
+  internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME43, client.config.searchApi);
   internalRequest.apiConfig = client.config.searchApi;
   delete internalRequest.query;
   const response = await client.makeRequest(internalRequest);
-  return response == null ? void 0 : response.data;
+  return parseSuggestResponse(response.data, client.config.searchApi);
 }
 
 // src/requests/search/autocomplete.ts
 init_Utility();
 init_ErrorHelper();
-var FUNCTION_NAME43 = "autocomplete";
-var REQUEST_NAME42 = `${LIBRARY_NAME}.${FUNCTION_NAME43}`;
+
+// src/requests/search/parsers/parseAutocompleteResponse.ts
+function parseAutocompleteResponse(queryResponse, config) {
+  if (!queryResponse) return queryResponse;
+  const toV1 = () => {
+    const responseValue = JSON.parse(queryResponse.response, dateReviver);
+    return {
+      ...queryResponse,
+      value: responseValue.Value,
+      querycontext: responseValue.QueryContext,
+      response: responseValue
+    };
+  };
+  const toV2 = () => {
+    return {
+      ...queryResponse,
+      response: {
+        Value: queryResponse.value,
+        QueryContext: queryResponse.querycontext,
+        Error: null
+      }
+    };
+  };
+  return (config == null ? void 0 : config.version) === "2.0" ? toV1() : toV2();
+}
+
+// src/requests/search/autocomplete.ts
+var FUNCTION_NAME44 = "autocomplete";
+var REQUEST_NAME42 = `${LIBRARY_NAME}.${FUNCTION_NAME44}`;
 async function autocomplete(request, client) {
   ErrorHelper.parameterCheck(request, REQUEST_NAME42, "request");
-  const _isObject = isObject(request);
+  const _isObject = typeof request !== "string";
   const parameterName = _isObject ? "request.query.search" : "term";
   const internalRequest = _isObject ? copyObject(request) : { query: { search: request } };
   if (_isObject) ErrorHelper.parameterCheck(internalRequest.query, REQUEST_NAME42, "request.query");
   ErrorHelper.stringParameterCheck(internalRequest.query.search, REQUEST_NAME42, parameterName);
   ErrorHelper.maxLengthStringParameterCheck(internalRequest.query.search, REQUEST_NAME42, parameterName, 100);
-  internalRequest.functionName = internalRequest.collection = "autocomplete";
+  internalRequest.functionName = internalRequest.collection = FUNCTION_NAME44;
   internalRequest.method = "POST";
-  internalRequest.data = internalRequest.query;
+  internalRequest.data = convertSearchQuery(internalRequest.query, FUNCTION_NAME44, client.config.searchApi);
   internalRequest.apiConfig = client.config.searchApi;
   delete internalRequest.query;
   const response = await client.makeRequest(internalRequest);
-  return response == null ? void 0 : response.data;
+  return parseAutocompleteResponse(response.data, client.config.searchApi);
 }
 
 // src/dynamics-web-api.ts
@@ -2794,25 +3002,35 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      */
     this.retrieveCsdlMetadata = async (request) => retrieveCsdlMetadata(request, __privateGet(this, _client));
     /**
+     * @deprecated Use "query" instead.
      * Provides a search results page.
      * @param request - An object that represents all possible options for a current request.
-     * @returns {Promise<SearchResponse<TValue>>} Search result
+     * @returns {Promise<SearchResponse<TValue>>} Search result.
      */
-    this.search = async (request) => query(request, __privateGet(this, _client));
+    this.search = async (request) => (
+      //@ts-ignore Ignoring the type error issue, because SearchFunction is deprecated and it will return what needs to return with a conversion.
+      query(request, __privateGet(this, _client))
+    );
+    /**
+     * The query operation returns search results based on a search term.
+     * @param request - An object that represents all possible options for a current request.
+     * @returns {Promise<QueryResponse>} Query result.
+     */
+    this.query = async (request) => query(request, __privateGet(this, _client));
     /**
      * Provides suggestions as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
-     * @returns {Promise<SuggestResponse<TValueDocument>>} Suggestions result
+     * @returns {Promise<SuggestResponse<TValueDocument>>} Suggestions result.
      */
     this.suggest = async (request) => suggest(request, __privateGet(this, _client));
     /**
      * Provides autocompletion of input as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
-     * @returns {Promise<AutocompleteResponse>} Result of autocomplete
+     * @returns {Promise<AutocompleteResponse>} Result of an autocomplete.
      */
     this.autocomplete = async (request) => autocomplete(request, __privateGet(this, _client));
     /**
-     * Starts/executes a batch request.
+     * Starts a batch request.
      */
     this.startBatch = () => startBatch(__privateGet(this, _client));
     /**

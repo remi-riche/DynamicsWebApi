@@ -5,6 +5,7 @@ import { ErrorHelper } from "../../helpers/ErrorHelper";
 import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
 import { convertSearchQuery } from "./convertSearchQuery";
+import { parseSuggestResponse } from "./parsers/parseSuggestResponse";
 
 const FUNCTION_NAME = "suggest";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
@@ -28,5 +29,5 @@ export async function suggest<TValueDocument = any>(request: string | SuggestReq
     delete internalRequest.query;
 
     const response = await client.makeRequest(internalRequest);
-    return response?.data;
+    return parseSuggestResponse(response!.data, client.config.searchApi);
 }

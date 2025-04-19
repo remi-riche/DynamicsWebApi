@@ -27,7 +27,7 @@ describe("dynamicsWebApi.query -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.searchMultiple;
+            const response = mocks.responses.searchMultiple();
             scope = nock(mocks.searchApiUrl)
                 .post(mocks.responses.searchUrl, searchQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);
@@ -60,7 +60,7 @@ describe("dynamicsWebApi.query -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.searchMultiple;
+            const response = mocks.responses.searchMultiple();
             scope = nock(mocks.searchApiUrl)
                 .post(mocks.responses.searchUrl, searchQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);
@@ -91,7 +91,7 @@ describe("dynamicsWebApi.query -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.searchMultiple;
+            const response = mocks.responses.searchMultiple();
             scope = nock(mocks.searchApiUrl, {
                 reqheaders: {
                     CallerObjectId: mocks.data.testEntityId3,
@@ -107,7 +107,7 @@ describe("dynamicsWebApi.query -", () => {
 
         it("returns a correct response", async () => {
             try {
-                const object = await dynamicsWebApiTest.search({
+                const object = await dynamicsWebApiTest.query({
                     query: searchQuery,
                     impersonateAAD: mocks.data.testEntityId3,
                 });
@@ -130,7 +130,7 @@ describe("dynamicsWebApi.query -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.searchMultiple;
+            const response = mocks.responses.searchMultiple();
             scope = nock(mocks.searchApiUrlV2)
                 .post(mocks.responses.searchUrl, searchQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);
@@ -142,7 +142,7 @@ describe("dynamicsWebApi.query -", () => {
 
         it("returns a correct response", async () => {
             try {
-                const object = await dynamicsWebApiSearchV2.search({
+                const object = await dynamicsWebApiSearchV2.query({
                     query: searchQuery,
                 });
                 expect(object).to.deep.equal(mocks.data.searchMultiple);
@@ -166,7 +166,7 @@ describe("dynamicsWebApi.suggest -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.suggestMultiple;
+            const response = mocks.responses.suggestMultiple();
             scope = nock(mocks.searchApiUrl)
                 .post(mocks.responses.suggestUrl, suggestQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);
@@ -199,7 +199,7 @@ describe("dynamicsWebApi.suggest -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.suggestMultiple;
+            const response = mocks.responses.suggestMultiple();
             scope = nock(mocks.searchApiUrl)
                 .post(mocks.responses.suggestUrl, suggestQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);
@@ -230,7 +230,7 @@ describe("dynamicsWebApi.suggest -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.suggestMultiple;
+            const response = mocks.responses.suggestMultiple();
             scope = nock(mocks.searchApiUrl, {
                 reqheaders: {
                     CallerObjectId: mocks.data.testEntityId3,
@@ -271,7 +271,7 @@ describe("dynamicsWebApi.autocomplete -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.autocompleteResult;
+            const response = mocks.responses.autocompleteResult();
             scope = nock(mocks.searchApiUrl)
                 .post(mocks.responses.autocompleteUrl, autocompleteQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);
@@ -304,7 +304,7 @@ describe("dynamicsWebApi.autocomplete -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.autocompleteResult;
+            const response = mocks.responses.autocompleteResult();
             scope = nock(mocks.searchApiUrl, {
                 reqheaders: {
                     CallerObjectId: mocks.data.testEntityId3,
@@ -342,7 +342,7 @@ describe("dynamicsWebApi.autocomplete -", () => {
         };
 
         before(() => {
-            const response = mocks.responses.autocompleteResult;
+            const response = mocks.responses.autocompleteResult();
             scope = nock(mocks.searchApiUrl)
                 .post(mocks.responses.autocompleteUrl, autocompleteQuery as any)
                 .reply(response.status, response.responseText, response.responseHeaders);

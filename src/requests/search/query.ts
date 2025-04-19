@@ -1,15 +1,16 @@
 import type { IDataverseClient } from "../../client/dataverse";
-import type { QueryRequest, SearchResponse } from "../../dynamics-web-api";
+import type { QueryRequest, QueryResponse } from "../../dynamics-web-api";
 import { copyObject } from "../../utils/Utility";
 import { ErrorHelper } from "../../helpers/ErrorHelper";
 import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
 import { convertSearchQuery } from "./convertSearchQuery";
+import { parseQueryResponse } from "./parsers/parseQueryResponse";
 
 const FUNCTION_NAME = "query";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
 
-export async function query<TValue = any>(request: string | QueryRequest, client: IDataverseClient): Promise<SearchResponse<TValue>> {
+export async function query(request: string | QueryRequest, client: IDataverseClient): Promise<QueryResponse> {
     ErrorHelper.parameterCheck(request, REQUEST_NAME, "request");
 
     const _isObject = typeof request !== "string";
@@ -29,6 +30,5 @@ export async function query<TValue = any>(request: string | QueryRequest, client
     delete internalRequest.query;
 
     const response = await client.makeRequest(internalRequest);
-    return response?.data;
+    return parseQueryResponse(response!.data, client.config.searchApi);
 }
-

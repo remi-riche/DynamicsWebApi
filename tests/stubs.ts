@@ -1,4 +1,7 @@
 ﻿//<cookie pagenumber="2" pagingcookie="<cookie page="1"><accountid last="{EF72AE29-B3DE-E611-8102-5065F38A7BF1}" first="{475B158C-541C-E511-80D3-3863BB347BA8}" /></cookie>" istracking="False" />
+
+import { AutocompleteResponse, QueryResponse, SuggestResponse } from "../src/dynamics-web-api";
+
 //<cookie pagenumber="2" pagingcookie="<cookie page="2"><accountid last="{F972AE29-B3DE-E611-8102-5065F38A7BF1}" first="{F172AE29-B3DE-E611-8102-5065F38A7BF1}" /></cookie>" istracking="False" />
 const serverUrl = "http://testorg.crm.dynamics.com";
 const portalUrl = "https://portal.com";
@@ -1456,20 +1459,75 @@ const responseStubs = {
             "Content-Type": "application/xml",
         },
     },
-    searchMultiple: {
-        status: 200,
-        responseText: JSON.stringify(dataStubs.searchMultiple),
-        responseHeaders: dataStubs.defaultResponseHeaders,
+    searchMultiple: function () {
+        const v2: QueryResponse["response"] = {
+            Count: dataStubs.searchMultiple.totalrecordcount,
+            Value: dataStubs.searchMultiple.value,
+            Error: null,
+            Facets: dataStubs.searchMultiple.facets,
+            QueryContext: dataStubs.searchMultiple.querycontext,
+        };
+
+        const v1 = {
+            ...dataStubs.searchMultiple,
+            response: JSON.stringify(v2),
+        };
+
+        dataStubs.searchMultiple.response = v2;
+
+        return {
+            status: 200,
+            responseText: JSON.stringify(v1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
     },
-    suggestMultiple: {
-        status: 200,
-        responseText: JSON.stringify(dataStubs.suggestMultiple),
-        responseHeaders: dataStubs.defaultResponseHeaders,
+    suggestMultiple: function () {
+        const v2: SuggestResponse["response"] = {
+            Error: null,
+            Value: dataStubs.suggestMultiple.value,
+            QueryContext: dataStubs.suggestMultiple.querycontext,
+        };
+
+        const v1 = {
+            ...dataStubs.suggestMultiple,
+            response: JSON.stringify(v2),
+        };
+
+        //populating missing values for v2
+        v2.Value.forEach((item, i) => {
+            item.Document = item.document;
+            item.Text = item.text;
+
+            dataStubs.suggestMultiple.value[i].Document = item.document;
+            dataStubs.suggestMultiple.value[i].Text = item.text;
+        });
+
+        dataStubs.suggestMultiple.response = v2;
+
+        return {
+            status: 200,
+            responseText: JSON.stringify(v1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
     },
-    autocompleteResult: {
-        status: 200,
-        responseText: JSON.stringify(dataStubs.autocompleteResult),
-        responseHeaders: dataStubs.defaultResponseHeaders,
+    autocompleteResult: function () {
+        const v2: AutocompleteResponse["response"] = {
+            Error: null,
+            Value: dataStubs.autocompleteResult.value,
+            QueryContext: dataStubs.autocompleteResult.querycontext,
+        };
+        const v1 = {
+            ...dataStubs.autocompleteResult,
+            response: JSON.stringify(v2),
+        };
+
+        dataStubs.autocompleteResult.response = v2;
+
+        return {
+            status: 200,
+            responseText: JSON.stringify(v1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
     },
     errorResponse: {
         status: 400,

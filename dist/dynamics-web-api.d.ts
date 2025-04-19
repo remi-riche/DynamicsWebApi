@@ -314,25 +314,32 @@ export declare class DynamicsWebApi {
      */
     retrieveCsdlMetadata: (request?: CsdlMetadataRequest) => Promise<string>;
     /**
+     * @deprecated Use "query" instead.
      * Provides a search results page.
      * @param request - An object that represents all possible options for a current request.
-     * @returns {Promise<SearchResponse<TValue>>} Search result
+     * @returns {Promise<SearchResponse<TValue>>} Search result.
      */
     search: SearchFunction;
     /**
+     * The query operation returns search results based on a search term.
+     * @param request - An object that represents all possible options for a current request.
+     * @returns {Promise<QueryResponse>} Query result.
+     */
+    query: QueryFunction;
+    /**
      * Provides suggestions as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
-     * @returns {Promise<SuggestResponse<TValueDocument>>} Suggestions result
+     * @returns {Promise<SuggestResponse<TValueDocument>>} Suggestions result.
      */
     suggest: SuggestFunction;
     /**
      * Provides autocompletion of input as the user enters text into a form field.
      * @param request - An object that represents all possible options for a current request.
-     * @returns {Promise<AutocompleteResponse>} Result of autocomplete
+     * @returns {Promise<AutocompleteResponse>} Result of an autocomplete.
      */
     autocomplete: AutocompleteFunction;
     /**
-     * Starts/executes a batch request.
+     * Starts a batch request.
      */
     startBatch: () => void;
     /**
@@ -807,7 +814,7 @@ export type SearchEntity = {
     /**Filters applied on the entity.*/
     filter?: string;
 };
-export type SearchOptions = {
+export type SearchOptions = Record<string, any> & {
     /**Values can be simple or lucene. */
     querytype?: "simple" | "lucene";
     /**Enables intelligent query workflow to return probable set of results if no good matches are found for the search request terms.*/
@@ -821,7 +828,7 @@ export interface SearchQueryBase {
     /**The search parameter value contains the term to be searched for and has a 100-character limit. For suggestions, min 3 characters in addition. */
     search: string;
     /**The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled. */
-    entities?: string[] | SearchEntity[];
+    entities?: string[] | SearchEntity[] | string;
     /**Filters are applied while searching data and are specified in standard OData syntax. */
     filter?: string;
 }
@@ -831,7 +838,7 @@ export interface Query extends SearchQueryBase {
     /**Facets support the ability to drill down into data results after they've been retrieved. */
     facets?: string[];
     /**
-     * Specify true to return the total record count; otherwise false. The default is false.
+     * V1. Specify true to return the total record count; otherwise false. The default is false.
      * @deprecated Use "count".
      */
     returnTotalRecordCount?: boolean;
@@ -842,14 +849,14 @@ export interface Query extends SearchQueryBase {
     /**A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
     orderBy?: string[];
     /**V2. Options are settings configured to search a search term. */
-    options?: SearchOptions[];
+    options?: string | SearchOptions;
     /**
-     * Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'.
+     * V1. Specifies whether any or all the search terms must be matched to count the document as a match. The default is 'any'.
      * @deprecated Use "options.searchmode".
      */
     searchMode?: SearchMode;
     /**
-     * For V2, use "options.querytype". The search type specifies the syntax of a search query. Using 'simple' selects simple query syntax and 'full' selects Lucene query syntax. The default is 'simple'.
+     * V1. The search type specifies the syntax of a search query. Using 'simple' selects simple query syntax and 'full' selects Lucene query syntax. The default is 'simple'.
      * @deprecated Use "options.querytype".
      */
     searchType?: SearchType;
@@ -884,11 +891,17 @@ export interface AutocompleteRequest extends BaseRequest {
     /**Autocomplete query object */
     query: Autocomplete;
 }
-export interface ApiConfig {
-    /** API Version to use, for example: "9.2" or "1.0" */
+export type SearchApiOptions = {
+    /**Escapes the search string. Special characters that require escaping include the following: + - & | ! ( ) { } [ ] ^ " ~ * ? : \ /. */
+    escapeSpecialCharacters?: boolean;
+};
+export interface ApiConfig<TOptions = any> {
+    /** API Version to use, for example: "9.2" or "1.0". */
     version?: string;
-    /** API Path, for example: "data" or "search" */
+    /** API Path, for example: "data" or "search". */
     path?: string;
+    /** Specific API options. Currently it is only available for the Search API .*/
+    options?: TOptions;
 }
 export interface AccessToken {
     /** Access Token */
@@ -918,7 +931,7 @@ export interface Config {
     /**Configuration object for Dataverse Web API (with path "data"). */
     dataApi?: ApiConfig;
     /**Configuration object for Dataverse Search API (with path "search"). */
-    searchApi?: ApiConfig;
+    searchApi?: ApiConfig<SearchApiOptions>;
     /**Default headers to supply with each request. */
     headers?: HeaderCollection;
 }
@@ -1000,26 +1013,103 @@ export interface DownloadResponse {
     /**File Data */
     data: Uint8Array | Buffer;
 }
+/**@deprecated Use QueryResponse instead */
 export interface SearchResponse<TValue = any> {
-    /**Search results*/
+    /**
+     * A collection of matching records.
+     * @deprecated Use "response.Value" instead.
+     */
     value: TValue[];
+    /**
+     * If facets were requested in the query, a dictionary of facet values.
+     * @deprecated Use "response.Facets" instead.
+     */
     facets: any | null;
+    /**
+     * If "Count": true is included in the body of the request, the count of all documents that match the search, ignoring top and skip.
+     * @deprecated Use "response.Count" instead.
+     */
     totalrecordcount: number;
+    /**
+     * This property is used for backend search. It's included for future feature releases and isn't currently used.
+     * @deprecated Use "response.QueryContext" instead.
+     */
     querycontext: any | null;
 }
-export interface SuggestResponseValue<TDocument = any> {
-    text: string;
-    document: TDocument;
+export interface QueryResponse extends SearchResponse<SearchQueryResult> {
+    /** Query response */
+    response: {
+        /**
+         * A collection of matching records.
+         */
+        Value: SearchQueryResult[];
+        /**
+         * Provides error information from Azure Cognitive search.
+         */
+        Error: SearchErrorDetail | null;
+        /**
+         * If facets were requested in the query, a dictionary of facet values.
+         */
+        Facets: Record<string, SearchFacetResult[]> | null;
+        /**
+         * This property is used for backend search. It's included for future feature releases and isn't currently used.
+         */
+        QueryContext: SearchQueryContext | null;
+        /**
+         * If "Count": true is included in the body of the request, the count of all documents that match the search, ignoring top and skip.
+         */
+        Count: number;
+    };
+    "@odata.context": string;
 }
 export interface SuggestResponse<TValueDocument = any> {
-    /**Suggestions*/
+    /**
+     * A collection of matching records.
+     * @deprecated Use "response.Value" instead.
+     */
     value: SuggestResponseValue<TValueDocument>[];
+    /**
+     * Suggestions query context
+     * @deprecated Use "response.QueryContext" instead.
+     */
     querycontext: any | null;
+    /** Suggestion response. */
+    response: {
+        /** Provides error information from Azure Cognitive search. */
+        Error: SearchErrorDetail | null;
+        /** A collection of matching records. */
+        Value: SuggestResponseValue<TValueDocument>[];
+        /**
+         * The query context returned as part of response. This property is used for backend search.
+         * It's included for future feature releases and isn't currently used.
+         */
+        QueryContext: SearchQueryContext | null;
+    };
+    "@odata.context": string;
 }
 export interface AutocompleteResponse {
-    /**Autocomplete result*/
+    /**
+     * Autocomplete text result.
+     * @deprecated Use "response.Value" instead.
+     */
     value: string | null;
+    /**
+     * This property is used for backend search. It's included for future feature releases and isn't currently used.
+     * @deprecated Use "response.QueryContext" instead.
+     */
     querycontext: any | null;
+    /** Autocomplete response. */
+    response: {
+        /** Provides error information from Azure Cognitive search. */
+        Error: SearchErrorDetail | null;
+        /** Autocomplete text result. */
+        Value: string | null;
+        /**
+         * This property is used for backend search. It's included for future feature releases and isn't currently used.
+         */
+        QueryContext: SearchQueryContext | null;
+    };
+    "@odata.context": string;
 }
 type CallFunction = {
     /**
@@ -1080,6 +1170,7 @@ type CallAction = {
      */
     <TResponse = any, TAction = any>(request: UnboundActionRequest<TAction>): Promise<TResponse>;
 };
+/**@deprecated Use "QueryFunction" instead */
 type SearchFunction = {
     /**
      * Provides a search results page.
@@ -1093,6 +1184,20 @@ type SearchFunction = {
      * @returns {Promise<SearchResponse<TValue>>} Search result
      */
     <TValue = any>(request: QueryRequest): Promise<SearchResponse<TValue>>;
+};
+type QueryFunction = {
+    /**
+     * Provides a search results page.
+     * @param term - The term to be searched for and has a max 100-character limit.
+     * @returns {Promise<SearchResponse>} Search result
+     */
+    (term: string): Promise<QueryResponse>;
+    /**
+     * Provides a search results page.
+     * @param request - An object that represents all possible options for a current request.
+     * @returns {Promise<QueryResponse>} Search result
+     */
+    (request: QueryRequest): Promise<QueryResponse>;
 };
 type SuggestFunction = {
     /**
@@ -1122,5 +1227,116 @@ type AutocompleteFunction = {
      */
     (request: AutocompleteRequest): Promise<AutocompleteResponse>;
 };
+/**
+ * The Azure Cognitive search error returned as part of the response.
+ */
+export type SearchErrorDetail = {
+    /**
+     * The error code.
+     */
+    code: string;
+    /**
+     * The error message.
+     */
+    message: string;
+    /**
+     * More error information.
+     */
+    propertybag: Record<string, any>;
+};
+/**
+ * A facet query result that reports the number of documents with a field falling within a particular range or having a particular value or interval.
+ */
+export type SearchFacetResult = {
+    /**
+     * The count of documents falling within the bucket described by this facet.
+     */
+    count?: number;
+    /**
+     * Value indicating the inclusive lower bound of the facet's range, or null to indicate that there's no lower bound.
+     */
+    from: any;
+    /**
+     * Value indicating the exclusive upper bound of the facet's range, or null to indicate that there's no upper bound.
+     */
+    to: any;
+    /**
+     * Type of the facet.
+     */
+    type: "Value" | "Range";
+    /**
+     * Value of the facet, or the inclusive lower bound if it's an interval facet.
+     */
+    value: any;
+    /**
+     * Another or optional value of the facet, populated while faceting on lookups.
+     */
+    optionalvalue: any;
+};
+/**
+ * The query context returned as part of response. This property is used for backend search. It's included for future feature releases and isn't currently used.
+ */
+export type SearchQueryContext = {
+    /** The query string as specified in the request. */
+    originalquery: string;
+    /**
+     * The query string that Dataverse search used to perform the query. Dataverse search uses the altered query string
+     * if the original query string contained spelling mistakes or didn't yield optimal results.
+     */
+    alteredquery: string;
+    /** The reasons behind query alter decision by Dataverse search. */
+    reason: string[];
+    /** The spell suggestion that is the likely words that represent user's intent. Populated only when Dataverse alters the query search due to spell check. */
+    spellsuggestions: string[];
+};
+/**
+ * Represents a record in Dataverse.
+ */
+export type SearchQueryResult = {
+    /**
+     * The identifier of the record.
+     */
+    Id: string;
+    /**
+     * The logical name of the table.
+     */
+    EntityName: string;
+    /**
+     * The object type code.
+     */
+    ObjectTypeCode: number;
+    /**
+     * Record attributes
+     */
+    Attributes: Record<string, any>;
+    /**
+     * The highlights.
+     */
+    Highlights: Record<string, string[]>;
+    /**
+     * The document score.
+     */
+    Score: number;
+};
+export interface SuggestResponseValue<TDocument = any> {
+    /**
+     * Provides the suggested text.
+     * @deprecated Use "Text" instead.
+     */
+    text: string;
+    /**
+     * Provides the suggested text.
+     */
+    Text: string;
+    /**
+     * The document.
+     * @deprecated Use "Document" instead.
+     */
+    document: TDocument;
+    /**
+     * The document.
+     */
+    Document: TDocument;
+}
 export {};
 //# sourceMappingURL=dynamics-web-api.d.ts.map
