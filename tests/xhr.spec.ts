@@ -54,6 +54,59 @@ describe("xhr -", () => {
     });
 
     describe("dynamicsWebApi.retrieve -", () => {
+        describe("basic", function () {
+            let responseObject: any;
+
+            before(async function () {
+                (global as any).XMLHttpRequest.onCreate = (xhr: SinonFakeXMLHttpRequest) => {
+                    requests.push(xhr);
+                };
+
+                const dwaRequest: any = {
+                    key: mocks.data.testEntityId,
+                    collection: "tests",
+                    expand: [{ property: "prop" }],
+                };
+
+                XhrWrapper.afterSendEvent = () => {
+                    const response = mocks.responses.response200;
+                    requests[0]?.respond(response.status, response.responseHeaders, response.responseText);
+                };
+
+                responseObject = await dynamicsWebApiTest.retrieve(dwaRequest);
+            });
+
+            after(function () {
+                requests.length = 0;
+                //@ts-ignore
+                XhrWrapper.afterSendEvent = undefined;
+            });
+
+            it("sends the request to the right end point", function () {
+                expect(requests[0]?.url).to.equal(mocks.webApiUrl + mocks.responses.testEntityUrl.replace(/^\/|\/$/g, "") + "?$expand=prop");
+            });
+
+            it("uses the correct method", function () {
+                expect(requests[0]?.method).to.equal("GET");
+            });
+
+            it("does not send data", function () {
+                expect(requests[0]?.requestBody).to.be.undefined;
+            });
+
+            it("sends the correct If-Match header", function () {
+                expect(requests[0]?.requestHeaders["If-Match"]).to.be.undefined;
+            });
+
+            it("sends the correct MSCRMCallerID header", function () {
+                expect(requests[0]?.requestHeaders["MSCRMCallerID"]).to.be.undefined;
+            });
+
+            it("returns the correct response", function () {
+                expect(responseObject).to.deep.equal(mocks.data.testEntity);
+            });
+        });
+
         describe("AbortSignal", () => {
             let responseObject: any;
             const ac = new AbortController();
@@ -607,61 +660,6 @@ describe("xhr -", () => {
                 expect(responseObject).to.equal(true);
                 expect(responseObject2).to.equal(false);
                 expect(responseObject3.status).to.equal(404);
-            });
-        });
-    });
-
-    describe("dynamicsWebApi.retrieve -", function () {
-        describe("basic", function () {
-            let responseObject: any;
-
-            before(async function () {
-                (global as any).XMLHttpRequest.onCreate = (xhr: SinonFakeXMLHttpRequest) => {
-                    requests.push(xhr);
-                };
-
-                const dwaRequest: any = {
-                    key: mocks.data.testEntityId,
-                    collection: "tests",
-                    expand: [{ property: "prop" }],
-                };
-
-                XhrWrapper.afterSendEvent = () => {
-                    const response = mocks.responses.response200;
-                    requests[0]?.respond(response.status, response.responseHeaders, response.responseText);
-                };
-
-                responseObject = await dynamicsWebApiTest.retrieve(dwaRequest);
-            });
-
-            after(function () {
-                requests.length = 0;
-                //@ts-ignore
-                XhrWrapper.afterSendEvent = undefined;
-            });
-
-            it("sends the request to the right end point", function () {
-                expect(requests[0]?.url).to.equal(mocks.webApiUrl + mocks.responses.testEntityUrl.replace(/^\/|\/$/g, "") + "?$expand=prop");
-            });
-
-            it("uses the correct method", function () {
-                expect(requests[0]?.method).to.equal("GET");
-            });
-
-            it("does not send data", function () {
-                expect(requests[0]?.requestBody).to.be.undefined;
-            });
-
-            it("sends the correct If-Match header", function () {
-                expect(requests[0]?.requestHeaders["If-Match"]).to.be.undefined;
-            });
-
-            it("sends the correct MSCRMCallerID header", function () {
-                expect(requests[0]?.requestHeaders["MSCRMCallerID"]).to.be.undefined;
-            });
-
-            it("returns the correct response", function () {
-                expect(responseObject).to.deep.equal(mocks.data.testEntity);
             });
         });
     });

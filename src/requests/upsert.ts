@@ -7,7 +7,7 @@ import { LIBRARY_NAME } from "./constants";
 const FUNCTION_NAME = "upsert";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
 
-export const upsert = async <TData = any>(request: UpsertRequest<TData>, client: IDataverseClient): Promise<TData> => {
+export const upsert = async <TData = any, TResponse = TData>(request: UpsertRequest<TData>, client: IDataverseClient): Promise<TResponse> => {
     ErrorHelper.parameterCheck(request, REQUEST_NAME, "request");
 
     const internalRequest = copyRequest(request);

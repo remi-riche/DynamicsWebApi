@@ -30,6 +30,8 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to create a new record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TData - Type of the data to be created.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      * @example
      *const lead = {
@@ -48,12 +50,13 @@ export class DynamicsWebApi {
      *const response = await dynamicsWebApi.create(request);
      *
      */
-    create = async <TData = any>(request: CreateRequest<TData>): Promise<TData> => Dataverse.create(request, this.#client);
+    create = async <TData = any, TResponse = TData>(request: CreateRequest<TData>): Promise<TResponse> => Dataverse.create(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      * @example
      *const request = {
@@ -66,23 +69,27 @@ export class DynamicsWebApi {
      *
      *const response = await dynamicsWebApi.retrieve(request);
      */
-    retrieve = async <T = any>(request: RetrieveRequest): Promise<T> => Dataverse.retrieve(request, this.#client);
+    retrieve = async <TResponse = any>(request: RetrieveRequest): Promise<TResponse> => Dataverse.retrieve(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TData - Type of the data to be created.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    update = async <TData = any>(request: UpdateRequest<TData>): Promise<TData> => Dataverse.update(request, this.#client);
+    update = async <TData = any, TResponse = TData>(request: UpdateRequest<TData>): Promise<TResponse> => Dataverse.update(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a single value in the record.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    updateSingleProperty = async <T = any>(request: UpdateSinglePropertyRequest): Promise<T> => Dataverse.updateSingleProperty(request, this.#client);
+    updateSingleProperty = async <TResponse = any>(request: UpdateSinglePropertyRequest): Promise<TResponse> =>
+        Dataverse.updateSingleProperty(request, this.#client);
 
     /**
      * Sends an asynchronous request to delete a record.
@@ -96,9 +103,11 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to upsert a record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TData - Type of the data to be created.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    upsert = async <TData = any>(request: UpsertRequest<TData>): Promise<TData> => Dataverse.upsert(request, this.#client);
+    upsert = async <TData = any, TResponse = TData>(request: UpsertRequest<TData>): Promise<TResponse> => Dataverse.upsert(request, this.#client);
 
     /**
      * Upload file to a File Attribute
@@ -117,22 +126,25 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to retrieve records.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @param {string} [nextPageLink] - Use the value of the @odata.nextLink property with a new GET request to return the next page of data. Pass null to retrieveMultipleOptions.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveMultiple = async <T = any>(request: RetrieveMultipleRequest, nextPageLink?: string): Promise<RetrieveMultipleResponse<T>> =>
+    retrieveMultiple = async <TValue = any>(request: RetrieveMultipleRequest, nextPageLink?: string): Promise<RetrieveMultipleResponse<TValue>> =>
         Dataverse.retrieveMultiple(request, this.#client, nextPageLink);
 
     /**
      * Sends an asynchronous request to retrieve all records.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveAll = <T = any>(request: RetrieveMultipleRequest): Promise<AllResponse<T>> => Dataverse.retrieveAll(request, this.#client);
+    retrieveAll = <TValue = any>(request: RetrieveMultipleRequest): Promise<AllResponse<TValue>> => Dataverse.retrieveAll(request, this.#client);
 
     /**
-     * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system. It is limited by the maximum number of entities that can be returned. Returns: Number
+     * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system. 
+     * It is limited by the maximum number of entities that can be returned. Returns: Number
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
@@ -150,17 +162,19 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to execute FetchXml to retrieve records. Returns: DWA.Types.FetchXmlResponse
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    fetch = async <T = any>(request: FetchXmlRequest): Promise<FetchXmlResponse<T>> => Dataverse.fetchXml(request, this.#client);
+    fetch = async <TValue = any>(request: FetchXmlRequest): Promise<FetchXmlResponse<TValue>> => Dataverse.fetchXml(request, this.#client);
 
     /**
      * Sends an asynchronous request to execute FetchXml to retrieve all records.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    fetchAll = async <T = any>(request: FetchAllRequest): Promise<FetchXmlResponse<T>> => Dataverse.fetchXmlAll(request, this.#client);
+    fetchAll = async <TValue = any>(request: FetchAllRequest): Promise<FetchXmlResponse<TValue>> => Dataverse.fetchXmlAll(request, this.#client);
 
     /**
      * Associate for a collection-valued navigation property. (1:N or N:N)
@@ -198,15 +212,18 @@ export class DynamicsWebApi {
      * Calls a Web API function
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    callFunction: CallFunction = async <T = any>(request: string | BoundFunctionRequest | UnboundFunctionRequest): Promise<T> =>
+    callFunction: CallFunction = async <TResponse = any>(request: string | BoundFunctionRequest | UnboundFunctionRequest): Promise<TResponse> =>
         Dataverse.callFunction(request, this.#client);
 
     /**
      * Calls a Web API action
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
+     * @template TAction - Type of the action to be executed.
      * @returns {Promise} D365 Web Api Response
      */
     callAction: CallAction = async <TResponse = any, TAction = any>(request: BoundActionRequest<TAction> | UnboundActionRequest<TAction>): Promise<TResponse> =>
@@ -215,82 +232,93 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to create an entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    createEntity = <T = any>(request: CreateEntityRequest): Promise<T> => Dataverse.createEntity(request, this.#client);
+    createEntity = <TResponse = any>(request: CreateEntityRequest): Promise<TResponse> => Dataverse.createEntity(request, this.#client);
 
     /**
      * Sends an asynchronous request to update an entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    updateEntity = <T = any>(request: UpdateEntityRequest): Promise<T> => Dataverse.updateEntity(request, this.#client);
+    updateEntity = <TResponse = any>(request: UpdateEntityRequest): Promise<TResponse> => Dataverse.updateEntity(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a specific entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveEntity = <T = any>(request: RetrieveEntityRequest): Promise<T> => Dataverse.retrieveEntity(request, this.#client);
+    retrieveEntity = <TResponse = any>(request: RetrieveEntityRequest): Promise<TResponse> => Dataverse.retrieveEntity(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve entity definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveEntities = <T = any>(request?: RetrieveEntitiesRequest): Promise<RetrieveMultipleResponse<T>> => Dataverse.retrieveEntities(this.#client, request);
+    retrieveEntities = <TValue = any>(request?: RetrieveEntitiesRequest): Promise<RetrieveMultipleResponse<TValue>> =>
+        Dataverse.retrieveEntities(this.#client, request);
 
     /**
      * Sends an asynchronous request to create an attribute.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    createAttribute = <T = any>(request: CreateAttributeRequest): Promise<T> => Dataverse.createAttribute(request, this.#client);
+    createAttribute = <TResponse = any>(request: CreateAttributeRequest): Promise<TResponse> => Dataverse.createAttribute(request, this.#client);
 
     /**
      * Sends an asynchronous request to update an attribute.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    updateAttribute = <T = any>(request: UpdateAttributeRequest): Promise<T> => Dataverse.updateAttribute(request, this.#client);
+    updateAttribute = <TResponse = any>(request: UpdateAttributeRequest): Promise<TResponse> => Dataverse.updateAttribute(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve attribute metadata for a specified entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveAttributes = <T = any>(request: RetrieveAttributesRequest): Promise<RetrieveMultipleResponse<T>> =>
+    retrieveAttributes = <TValue = any>(request: RetrieveAttributesRequest): Promise<RetrieveMultipleResponse<TValue>> =>
         Dataverse.retrieveAttributes(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a specific attribute metadata for a specified entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveAttribute = <T = any>(request: RetrieveAttributeRequest): Promise<T> => Dataverse.retrieveAttribute(request, this.#client);
+    retrieveAttribute = <TResponse = any>(request: RetrieveAttributeRequest): Promise<TResponse> => Dataverse.retrieveAttribute(request, this.#client);
 
     /**
      * Sends an asynchronous request to create a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    createRelationship = <T = any>(request: CreateRelationshipRequest): Promise<T> => Dataverse.createRelationship(request, this.#client);
+    createRelationship = <TResponse = any>(request: CreateRelationshipRequest): Promise<TResponse> => Dataverse.createRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    updateRelationship = <T = any>(request: UpdateRelationshipRequest): Promise<T> => Dataverse.updateRelationship(request, this.#client);
+    updateRelationship = <TResponse = any>(request: UpdateRelationshipRequest): Promise<TResponse> => Dataverse.updateRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to delete a relationship definition.
@@ -304,34 +332,40 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to retrieve relationship definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveRelationships = <T = any>(request?: RetrieveRelationshipsRequest): Promise<RetrieveMultipleResponse<T>> =>
+    retrieveRelationships = <TValue = any>(request?: RetrieveRelationshipsRequest): Promise<RetrieveMultipleResponse<TValue>> =>
         Dataverse.retrieveRelationships(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve a specific relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveRelationship = <T = any>(request: RetrieveRelationshipRequest): Promise<T> => Dataverse.retrieveRelationship(request, this.#client);
+    retrieveRelationship = <TResponse = any>(request: RetrieveRelationshipRequest): Promise<TResponse> => Dataverse.retrieveRelationship(request, this.#client);
 
     /**
      * Sends an asynchronous request to create a Global Option Set definition
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    createGlobalOptionSet = <T = any>(request: CreateGlobalOptionSetRequest): Promise<T> => Dataverse.createGlobalOptionSet(request, this.#client);
+    createGlobalOptionSet = <TResponse = any>(request: CreateGlobalOptionSetRequest): Promise<TResponse> =>
+        Dataverse.createGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to update a Global Option Set.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    updateGlobalOptionSet = <T = any>(request: UpdateGlobalOptionSetRequest): Promise<T> => Dataverse.updateGlobalOptionSet(request, this.#client);
+    updateGlobalOptionSet = <TResponse = any>(request: UpdateGlobalOptionSetRequest): Promise<TResponse> =>
+        Dataverse.updateGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to delete a Global Option Set.
@@ -345,17 +379,20 @@ export class DynamicsWebApi {
      * Sends an asynchronous request to retrieve Global Option Set definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveGlobalOptionSet = <T = any>(request: RetrieveGlobalOptionSetRequest): Promise<T> => Dataverse.retrieveGlobalOptionSet(request, this.#client);
+    retrieveGlobalOptionSet = <TResponse = any>(request: RetrieveGlobalOptionSetRequest): Promise<TResponse> =>
+        Dataverse.retrieveGlobalOptionSet(request, this.#client);
 
     /**
      * Sends an asynchronous request to retrieve Global Option Set definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
-    retrieveGlobalOptionSets = <T = any>(request?: RetrieveGlobalOptionSetsRequest): Promise<RetrieveMultipleResponse<T>> =>
+    retrieveGlobalOptionSets = <TValue = any>(request?: RetrieveGlobalOptionSetsRequest): Promise<RetrieveMultipleResponse<TValue>> =>
         Dataverse.retrieveGlobalOptionSets(request, this.#client);
 
     /**
@@ -371,7 +408,7 @@ export class DynamicsWebApi {
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise<SearchResponse<TValue>>} Search result.
      */
-    search: SearchFunction = async <TValue = any>(request: string | QueryRequest): Promise<SearchResponse<TValue>> =>
+    search: SearchFunction = async <TValue = any>(request: string | SearchRequest): Promise<SearchResponse<TValue>> =>
         //@ts-ignore Ignoring the type error issue, because SearchFunction is deprecated and it will return what needs to return with a conversion.
         Dataverse.query(request, this.#client);
 
@@ -511,13 +548,13 @@ export interface FetchXmlRequest extends FetchAllRequest {
     pagingCookie?: string;
 }
 
-export interface CreateRequest<T = any> extends CRUDRequest {
+export interface CreateRequest<TData = any> extends CRUDRequest {
     /**If set to true, the request bypasses custom business logic, all synchronous plug-ins and real-time workflows are disabled. Check for special exceptions in Microsft Docs. */
     bypassCustomPluginExecution?: boolean;
     /**Web API v9+ only! Boolean that enables duplicate detection. */
     duplicateDetection?: boolean;
     /**A JavaScript object with properties corresponding to the logical name of entity attributes(exceptions are lookups and single-valued navigation properties). */
-    data?: T;
+    data?: TData;
     /**An array of Expand Objects representing the $expand OData System Query Option value to control which related records are also returned. Can also accept a string. */
     expand?: string | Expand[];
     /**Sets Prefer header with value "odata.include-annotations=" and the specified annotation.Annotations provide additional information about lookups, options sets and other complex attribute types. */
@@ -534,6 +571,10 @@ export interface CreateRequest<T = any> extends CRUDRequest {
     contentId?: string;
     /**A unique partition key value of a logical partition for non-relational custom entity data stored in NoSql tables of Azure heterogenous storage. */
     partitionId?: string;
+}
+
+export interface CreateWithRepresentationRequest<TData = any> extends Omit<CreateRequest<TData>, "returnRepresentation"> {
+    returnRepresentation: true;
 }
 
 export interface UpdateRequestBase<T = any> extends CRUDRequest {
@@ -1103,21 +1144,21 @@ export interface RequestError extends Error {
     };
 }
 
-export interface MultipleResponse<T = any> {
+export interface MultipleResponse<TValue = any> {
     /**Multiple respone entities */
-    value: T[];
+    value: TValue[];
     oDataCount?: number;
     "@odata.count"?: number;
     oDataContext?: string;
     "@odata.context"?: number;
 }
 
-export interface AllResponse<T> extends MultipleResponse<T> {
+export interface AllResponse<TValue> extends MultipleResponse<TValue> {
     /**@odata.deltaLink value */
     oDataDeltaLink?: string;
 }
 
-export interface RetrieveMultipleResponse<T> extends MultipleResponse<T> {
+export interface RetrieveMultipleResponse<TValue> extends MultipleResponse<TValue> {
     "@Microsoft.Dynamics.CRM.totalrecordcount"?: number;
     "@Microsoft.Dynamics.CRM.totalrecordcountlimitexceeded"?: boolean;
     /**@odata.nextLink value */
@@ -1128,7 +1169,7 @@ export interface RetrieveMultipleResponse<T> extends MultipleResponse<T> {
     "@odata.nextLink"?: string;
 }
 
-export interface FetchXmlResponse<T> extends MultipleResponse<T> {
+export interface FetchXmlResponse<TValue> extends MultipleResponse<TValue> {
     "@Microsoft.Dynamics.CRM.totalrecordcount"?: number;
     "@Microsoft.Dynamics.CRM.totalrecordcountlimitexceeded"?: boolean;
     /**Paging information */

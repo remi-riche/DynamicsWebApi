@@ -8,7 +8,7 @@ import { LIBRARY_NAME } from "./constants";
 const FUNCTION_NAME = "create";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;
 
-export const create = async <TData = any>(request: CreateRequest<TData>, client: IDataverseClient): Promise<TData> => {
+export const create = async <TData = any, TResponse = TData>(request: CreateRequest<TData>, client: IDataverseClient): Promise<TResponse> => {
     ErrorHelper.parameterCheck(request, REQUEST_NAME, "request");
 
     let internalRequest: InternalRequest;
