@@ -70,6 +70,7 @@
         "test:build": "tsc",
         "test:mocha": "mocha",
         "test": "run-s test:*",
+        "tsc": "tsc --noEmit",
         "coverage": "run-s coverage:clean test:build coverage:nyc:*",
         "coverage:clean": "rimraf coverage",
         "coverage:nyc:test": "nyc mocha",

@@ -1,5 +1,5 @@
 ﻿import type * as Core from "../types";
-import { generateRandomBytes, getCrypto } from "../helpers/Crypto";
+import { getCrypto } from "../helpers/Crypto";
 import { isUuid, extractUuid, parsePagingCookie } from "../helpers/Regex";
 
 declare var GetGlobalContext: any;
