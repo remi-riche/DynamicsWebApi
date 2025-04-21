@@ -1,66 +1,117 @@
 import type { Config } from "../../../dynamics-web-api";
 import type { InternalRequest } from "../../../types";
 import { ErrorHelper } from "../../../helpers/ErrorHelper";
-import { removeDoubleQuotes } from "../../../helpers/Regex";
+import { extractPreferCallbackUrl, removeDoubleQuotes } from "../../../helpers/Regex";
+
+type PreferOptions = {
+    returnRepresentation?: boolean | null;
+    includeAnnotations?: string | null;
+    maxPageSize?: number | null;
+    trackChanges?: boolean;
+    continueOnError?: boolean;
+    backgroundOperationCallbackUrl?: string | null;
+    respondAsync?: boolean;
+};
 
 export const composePreferHeader = (request: InternalRequest, config: Config): string => {
-    let { returnRepresentation, includeAnnotations, maxPageSize, trackChanges, continueOnError } = request;
+    const functionName = `DynamicsWebApi.${request.functionName}`;
 
-    if (request.prefer && request.prefer.length) {
-        ErrorHelper.stringOrArrayParameterCheck(request.prefer, `DynamicsWebApi.${request.functionName}`, "request.prefer");
+    // Extract request options with defaults from config
+    const options: PreferOptions = {
+        respondAsync: request.respondAsync,
+        backgroundOperationCallbackUrl: request.backgroundOperationCallbackUrl ?? config?.backgroundOperationCallbackUrl,
+        returnRepresentation: request.returnRepresentation ?? config?.returnRepresentation,
+        includeAnnotations: request.includeAnnotations ?? config?.includeAnnotations,
+        maxPageSize: request.maxPageSize ?? config?.maxPageSize,
+        trackChanges: request.trackChanges,
+        continueOnError: request.continueOnError,
+    };
+
+    const prefer: Set<string> = new Set();
+
+    // Process prefer header from request. Request items have a higher priority than config
+    if (request.prefer?.length) {
+        ErrorHelper.stringOrArrayParameterCheck(request.prefer, functionName, "request.prefer");
         const preferArray = typeof request.prefer === "string" ? request.prefer.split(",") : request.prefer;
 
-        preferArray.forEach((item) => {
+        for (const item of preferArray) {
             const trimmedItem = item.trim();
-            if (trimmedItem === "return=representation") {
-                returnRepresentation = true;
+
+            if (trimmedItem.includes("respond-async")) {
+                options.respondAsync = true;
+            } else if (trimmedItem.startsWith("odata.callback")) {
+                options.backgroundOperationCallbackUrl = extractPreferCallbackUrl(trimmedItem);
+            } else if (trimmedItem === "return=representation") {
+                options.returnRepresentation = true;
             } else if (trimmedItem.includes("odata.include-annotations=")) {
-                includeAnnotations = removeDoubleQuotes(trimmedItem.replace("odata.include-annotations=", ""));
+                options.includeAnnotations = removeDoubleQuotes(trimmedItem.replace("odata.include-annotations=", ""));
             } else if (trimmedItem.startsWith("odata.maxpagesize=")) {
-                maxPageSize = Number(removeDoubleQuotes(trimmedItem.replace("odata.maxpagesize=", ""))) || 0;
+                options.maxPageSize = Number(removeDoubleQuotes(trimmedItem.replace("odata.maxpagesize=", ""))) || 0;
             } else if (trimmedItem.includes("odata.track-changes")) {
-                trackChanges = true;
+                options.trackChanges = true;
             } else if (trimmedItem.includes("odata.continue-on-error")) {
-                continueOnError = true;
+                options.continueOnError = true;
+            } else {
+                prefer.add(trimmedItem);
             }
-        });
-    }
-
-    //clear array
-    const prefer: string[] = [];
-
-    if (config) {
-        if (returnRepresentation == null) {
-            returnRepresentation = config.returnRepresentation;
         }
-        includeAnnotations = includeAnnotations ?? config.includeAnnotations;
-        maxPageSize = maxPageSize ?? config.maxPageSize;
     }
 
-    if (returnRepresentation) {
-        ErrorHelper.boolParameterCheck(returnRepresentation, `DynamicsWebApi.${request.functionName}`, "request.returnRepresentation");
-        prefer.push("return=representation");
+    // Process prefer options
+    for (const key in options) {
+        const optionFactory = preferOptionsFactory[key];
+        if (optionFactory && options[key]) {
+            optionFactory.validator?.(options[key], functionName, `request.${key}`);
+            if (optionFactory.condition(options[key], options)) {
+                prefer.add(optionFactory.formatter(options[key], options));
+            }
+        }
     }
 
-    if (includeAnnotations) {
-        ErrorHelper.stringParameterCheck(includeAnnotations, `DynamicsWebApi.${request.functionName}`, "request.includeAnnotations");
-        prefer.push(`odata.include-annotations="${includeAnnotations}"`);
-    }
+    return Array.from(prefer).join(",");
+};
 
-    if (maxPageSize && maxPageSize > 0) {
-        ErrorHelper.numberParameterCheck(maxPageSize, `DynamicsWebApi.${request.functionName}`, "request.maxPageSize");
-        prefer.push("odata.maxpagesize=" + maxPageSize);
-    }
+type PreferValidationHandler = (value: any, functionName: string, paramName: string) => void;
+interface PreferFactoryOption {
+    validator?: PreferValidationHandler;
+    condition: (value: any, options: Record<string, any>) => boolean;
+    formatter: (value: any, options: Record<string, any>) => string;
+}
 
-    if (trackChanges) {
-        ErrorHelper.boolParameterCheck(trackChanges, `DynamicsWebApi.${request.functionName}`, "request.trackChanges");
-        prefer.push("odata.track-changes");
-    }
-
-    if (continueOnError) {
-        ErrorHelper.boolParameterCheck(continueOnError, `DynamicsWebApi.${request.functionName}`, "request.continueOnError");
-        prefer.push("odata.continue-on-error");
-    }
-
-    return prefer.join(",");
+const preferOptionsFactory: Record<string, PreferFactoryOption> = {
+    respondAsync: {
+        validator: ErrorHelper.boolParameterCheck,
+        condition: (value) => !!value,
+        formatter: () => "respond-async",
+    },
+    backgroundOperationCallbackUrl: {
+        validator: ErrorHelper.stringParameterCheck,
+        condition: (value, options) => value && options.respondAsync,
+        formatter: (url) => `odata.callback;url="${url}"`,
+    },
+    returnRepresentation: {
+        validator: ErrorHelper.boolParameterCheck,
+        condition: (value) => !!value,
+        formatter: () => "return=representation",
+    },
+    includeAnnotations: {
+        validator: ErrorHelper.stringParameterCheck,
+        condition: (value) => !!value,
+        formatter: (annotations) => `odata.include-annotations="${annotations}"`,
+    },
+    maxPageSize: {
+        validator: (value, functionName) => (value > 0 ? ErrorHelper.numberParameterCheck(value, functionName, "request.maxPageSize") : undefined),
+        condition: (value) => value > 0,
+        formatter: (size) => `odata.maxpagesize=${size}`,
+    },
+    trackChanges: {
+        validator: ErrorHelper.boolParameterCheck,
+        condition: (value) => !!value,
+        formatter: () => "odata.track-changes",
+    },
+    continueOnError: {
+        validator: ErrorHelper.boolParameterCheck,
+        condition: (value) => !!value,
+        formatter: () => "odata.continue-on-error",
+    },
 };

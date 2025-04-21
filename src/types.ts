@@ -141,6 +141,9 @@ export interface InternalRequest {
     query?: any;
     signal?: AbortSignal;
     continueOnError?: boolean;
+    /**A callback URL when the background operation is completed. */
+    backgroundOperationCallbackUrl?: string | null;
+    respondAsync?: boolean;
 }
 
 export interface FileParseResult {

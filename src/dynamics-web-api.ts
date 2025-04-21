@@ -143,7 +143,7 @@ export class DynamicsWebApi {
     retrieveAll = <TValue = any>(request: RetrieveMultipleRequest): Promise<AllResponse<TValue>> => Dataverse.retrieveAll(request, this.#client);
 
     /**
-     * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system. 
+     * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system.
      * It is limited by the maximum number of entities that can be returned. Returns: Number
      *
      * @param request - An object that represents all possible options for a current request.
@@ -487,7 +487,8 @@ export interface Expand {
 export interface BaseRequest {
     /**XHR requests only! Indicates whether the requests should be made synchronously or asynchronously.Default value is 'true'(asynchronously). */
     async?: boolean;
-    /**Impersonates a user based on their systemuserid by adding "MSCRMCallerID" header. A String representing the GUID value for the Dynamics 365 systemuserid. */
+    /**Impersonates a user based on their systemuserid by adding "MSCRMCallerID" header.
+     * A String representing the GUID value for the Dynamics 365 systemuserid. */
     impersonate?: string;
     /**Impersonates a user based on their Azure Active Directory (AAD) object id by passing that value along with the header "CallerObjectId". A String should represent a GUID value. */
     impersonateAAD?: string;
@@ -499,12 +500,25 @@ export interface BaseRequest {
     timeout?: number;
     /**The AbortSignal interface represents a signal object that allows you to communicate with a DOM request and abort it if required via an AbortController object. */
     signal?: AbortSignal;
-    /**Indicates if an operation must be included in a Change Set or not. Works in Batch Operations only. By default, it's "true", except for GET operations - they are not allowed in Change Sets. */
+    /**Indicates if an operation must be included in a Change Set or not. Works in Batch Operations only.
+     * By default, it's "true", except for GET operations - they are not allowed in Change Sets. */
     inChangeSet?: boolean;
     /**Headers to supply with a request. These headers will override configuraiton headers if the identical ones were set. */
     headers?: HeaderCollection;
-    /**Custom query parameters. Can be used to set parameter aliases for "$filter" and "$orderBy". Important! These parameters ARE NOT URI encoded! */
+    /**
+     * Custom query parameters. Can be used to set parameter aliases for "$filter" and "$orderBy".
+     * Important! These parameters ARE NOT URI encoded! */
     queryParams?: string[];
+    /**
+     * A callback URL when the background operation is completed.
+     * Dataverse uses this URL to send a POST request.
+     */
+    backgroundOperationCallbackUrl?: string;
+    /**
+     * Use background operations to send requests that Dataverse processes asynchronously.
+     * Background operations are useful when you don't want to maintain a connection while a request runs.
+     */
+    respondAsync?: boolean;
 }
 
 export interface BatchRequest extends BaseRequest {
@@ -953,6 +967,17 @@ export interface CsdlMetadataRequest extends BaseRequest {
     addAnnotations?: boolean;
 }
 
+export type BackgroundOperationResponse = {
+    /**
+     * Location URL of the background operation.
+     */
+    location: string;
+    /**
+     * The ID of the background operation.
+     */
+    backgroundOperationId: string;
+};
+
 export type SearchMode = "any" | "all";
 export type SearchType = "simple" | "full";
 
@@ -1098,6 +1123,12 @@ export interface Config {
     searchApi?: ApiConfig<SearchApiOptions>;
     /**Default headers to supply with each request. */
     headers?: HeaderCollection;
+    /**
+     * A default callback URL when the background operation is completed.
+     * Dataverse uses this URL to send a POST request.
+     * You can also set a callback URL per request.
+     */
+    backgroundOperationCallbackUrl?: string;
 }
 
 /**Header collection type */

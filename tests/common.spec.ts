@@ -9,6 +9,7 @@ import * as Regex from "../src/helpers/Regex";
 import * as RequestUtility from "../src/client/request";
 import { DynamicsWebApiError } from "../src/helpers/ErrorHelper";
 import { composeHeaders } from "../src/client/request/composers";
+import { composePreferHeader } from "../src/client/request/composers/preferHeader";
 
 describe("Regex.", () => {
     describe("isUuid -", () => {
@@ -387,11 +388,152 @@ describe("Config.merge -", () => {
 
         ConfigurationUtility.merge(internalConfig, {
             searchApi: {
-                version: "2.0"
+                version: "2.0",
             },
         });
 
         expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.false;
         expect(internalConfig.searchApi.version).to.be.eq("2.0");
+    });
+});
+
+describe("composePreferHeader -", () => {
+    it("respond-async", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: true,
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq("respond-async");
+    });
+
+    it("respond-async - false", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: false,
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq("");
+    });
+
+    it("respond-async - in a prefer header as string, backgroundOperationCallbackUrl", () => {
+        const preferHeader = composePreferHeader(
+            {
+                prefer: "respond-async",
+                backgroundOperationCallbackUrl: "https://test.com",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq('respond-async,odata.callback;url="https://test.com"');
+    });
+
+    it("respond-async, backgroundOperationCallbackUrl", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: true,
+                backgroundOperationCallbackUrl: "https://test.com",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq('respond-async,odata.callback;url="https://test.com"');
+    });
+
+    it("respond-async, backgroundOperationCallbackUrl - as a string in prefer header", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: true,
+                prefer: "odata.callback;url=https://test.com",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq('respond-async,odata.callback;url="https://test.com"');
+    });
+
+    it("backgroundOperationCallbackUrl only - does not add anything", () => {
+        const preferHeader = composePreferHeader(
+            {
+                backgroundOperationCallbackUrl: "https://test.com",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq("");
+    });
+
+    it("backgroundOperationCallbackUrl as a string in prefer header - does not add anything", () => {
+        const preferHeader = composePreferHeader(
+            {
+                prefer: "odata.callback;url=https://test.com",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq("");
+    });
+
+    it("respond-async, backgroundOperationCallbackUrl, returnRepresentation", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: true,
+                backgroundOperationCallbackUrl: "https://test.com",
+                returnRepresentation: true,
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq('respond-async,odata.callback;url="https://test.com",return=representation');
+    });
+
+    it("respond-async, config.backgroundOperationCallbackUrl", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: true,
+            },
+            { backgroundOperationCallbackUrl: "https://test.com" },
+        );
+
+        expect(preferHeader).to.be.eq('respond-async,odata.callback;url="https://test.com"');
+    });
+
+    it("respond-async, backgroundOperationCallbackUrl, config.backgroundOperationCallbackUrl - request takes priority", () => {
+        const preferHeader = composePreferHeader(
+            {
+                respondAsync: true,
+                backgroundOperationCallbackUrl: "https://request.com",
+            },
+            { backgroundOperationCallbackUrl: "https://test.com" },
+        );
+
+        expect(preferHeader).to.be.eq('respond-async,odata.callback;url="https://request.com"');
+    });
+
+    it("custom-prefer-header", () => {
+        const preferHeader = composePreferHeader(
+            {
+                prefer: "custom-prefer-header",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq("custom-prefer-header");
+    });
+
+    it("returnRepresentation, custom-prefer-header", () => {
+        const preferHeader = composePreferHeader(
+            {
+                returnRepresentation: true,
+                prefer: "custom-prefer-header",
+            },
+            {},
+        );
+
+        expect(preferHeader).to.be.eq("custom-prefer-header,return=representation");
     });
 });

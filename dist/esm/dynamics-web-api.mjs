@@ -114,7 +114,11 @@ function getUpdateMethod(collection) {
 function escapeSearchSpecialCharacters(value) {
   return value.replace(SEARCH_SPECIAL_CHARACTERS_REGEX, "\\$&");
 }
-var UUID, UUID_REGEX, EXTRACT_UUID_REGEX, EXTRACT_UUID_FROM_URL_REGEX, REMOVE_BRACKETS_FROM_UUID_REGEX, ENTITY_UUID_REGEX, QUOTATION_MARK_REGEX, PAGING_COOKIE_REGEX, SPECIAL_CHARACTER_REGEX, LEADING_SLASH_REGEX, UNICODE_SYMBOLS_REGEX, DOUBLE_QUOTE_REGEX, BATCH_RESPONSE_HEADERS_REGEX, HTTP_STATUS_REGEX, CONTENT_TYPE_PLAIN_REGEX, ODATA_ENTITYID_REGEX, TEXT_REGEX, LINE_ENDING_REGEX, SEARCH_FOR_ENTITY_NAME_REGEX, SPECIAL_COLLECTION_FOR_UPDATE_REGEX, FETCH_XML_TOP_REGEX, FETCH_XML_PAGE_REGEX, FETCH_XML_REPLACE_REGEX, DATE_FORMAT_REGEX, SEARCH_SPECIAL_CHARACTERS_REGEX;
+function extractPreferCallbackUrl(value) {
+  const match = PREFER_CALLBACK_URL_REGEX.exec(value);
+  return match ? match[1] : null;
+}
+var UUID, UUID_REGEX, EXTRACT_UUID_REGEX, EXTRACT_UUID_FROM_URL_REGEX, REMOVE_BRACKETS_FROM_UUID_REGEX, ENTITY_UUID_REGEX, QUOTATION_MARK_REGEX, PAGING_COOKIE_REGEX, SPECIAL_CHARACTER_REGEX, LEADING_SLASH_REGEX, UNICODE_SYMBOLS_REGEX, DOUBLE_QUOTE_REGEX, BATCH_RESPONSE_HEADERS_REGEX, HTTP_STATUS_REGEX, CONTENT_TYPE_PLAIN_REGEX, ODATA_ENTITYID_REGEX, TEXT_REGEX, LINE_ENDING_REGEX, SEARCH_FOR_ENTITY_NAME_REGEX, SPECIAL_COLLECTION_FOR_UPDATE_REGEX, FETCH_XML_TOP_REGEX, FETCH_XML_PAGE_REGEX, FETCH_XML_REPLACE_REGEX, DATE_FORMAT_REGEX, SEARCH_SPECIAL_CHARACTERS_REGEX, PREFER_CALLBACK_URL_REGEX;
 var init_Regex = __esm({
   "src/helpers/Regex.ts"() {
     "use strict";
@@ -143,6 +147,7 @@ var init_Regex = __esm({
     FETCH_XML_REPLACE_REGEX = /^(<fetch)/;
     DATE_FORMAT_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:Z|[-+]\d{2}:\d{2})$/;
     SEARCH_SPECIAL_CHARACTERS_REGEX = /[+\-&|!(){}[\]^"~*?:\\\/]/g;
+    PREFER_CALLBACK_URL_REGEX = /^odata\.callback;\s*url=["']?(.+)["']?$/;
   }
 });
 
@@ -1163,54 +1168,89 @@ init_ErrorHelper();
 init_ErrorHelper();
 init_Regex();
 var composePreferHeader = (request, config) => {
-  let { returnRepresentation, includeAnnotations, maxPageSize, trackChanges, continueOnError } = request;
-  if (request.prefer && request.prefer.length) {
-    ErrorHelper.stringOrArrayParameterCheck(request.prefer, `DynamicsWebApi.${request.functionName}`, "request.prefer");
+  var _a2, _b2;
+  const functionName = `DynamicsWebApi.${request.functionName}`;
+  const options = {
+    respondAsync: request.respondAsync,
+    backgroundOperationCallbackUrl: request.backgroundOperationCallbackUrl ?? (config == null ? void 0 : config.backgroundOperationCallbackUrl),
+    returnRepresentation: request.returnRepresentation ?? (config == null ? void 0 : config.returnRepresentation),
+    includeAnnotations: request.includeAnnotations ?? (config == null ? void 0 : config.includeAnnotations),
+    maxPageSize: request.maxPageSize ?? (config == null ? void 0 : config.maxPageSize),
+    trackChanges: request.trackChanges,
+    continueOnError: request.continueOnError
+  };
+  const prefer = /* @__PURE__ */ new Set();
+  if ((_a2 = request.prefer) == null ? void 0 : _a2.length) {
+    ErrorHelper.stringOrArrayParameterCheck(request.prefer, functionName, "request.prefer");
     const preferArray = typeof request.prefer === "string" ? request.prefer.split(",") : request.prefer;
-    preferArray.forEach((item) => {
+    for (const item of preferArray) {
       const trimmedItem = item.trim();
-      if (trimmedItem === "return=representation") {
-        returnRepresentation = true;
+      if (trimmedItem.includes("respond-async")) {
+        options.respondAsync = true;
+      } else if (trimmedItem.startsWith("odata.callback")) {
+        options.backgroundOperationCallbackUrl = extractPreferCallbackUrl(trimmedItem);
+      } else if (trimmedItem === "return=representation") {
+        options.returnRepresentation = true;
       } else if (trimmedItem.includes("odata.include-annotations=")) {
-        includeAnnotations = removeDoubleQuotes(trimmedItem.replace("odata.include-annotations=", ""));
+        options.includeAnnotations = removeDoubleQuotes(trimmedItem.replace("odata.include-annotations=", ""));
       } else if (trimmedItem.startsWith("odata.maxpagesize=")) {
-        maxPageSize = Number(removeDoubleQuotes(trimmedItem.replace("odata.maxpagesize=", ""))) || 0;
+        options.maxPageSize = Number(removeDoubleQuotes(trimmedItem.replace("odata.maxpagesize=", ""))) || 0;
       } else if (trimmedItem.includes("odata.track-changes")) {
-        trackChanges = true;
+        options.trackChanges = true;
       } else if (trimmedItem.includes("odata.continue-on-error")) {
-        continueOnError = true;
+        options.continueOnError = true;
+      } else {
+        prefer.add(trimmedItem);
       }
-    });
-  }
-  const prefer = [];
-  if (config) {
-    if (returnRepresentation == null) {
-      returnRepresentation = config.returnRepresentation;
     }
-    includeAnnotations = includeAnnotations ?? config.includeAnnotations;
-    maxPageSize = maxPageSize ?? config.maxPageSize;
   }
-  if (returnRepresentation) {
-    ErrorHelper.boolParameterCheck(returnRepresentation, `DynamicsWebApi.${request.functionName}`, "request.returnRepresentation");
-    prefer.push("return=representation");
+  for (const key in options) {
+    const optionFactory = preferOptionsFactory[key];
+    if (optionFactory && options[key]) {
+      (_b2 = optionFactory.validator) == null ? void 0 : _b2.call(optionFactory, options[key], functionName, `request.${key}`);
+      if (optionFactory.condition(options[key], options)) {
+        prefer.add(optionFactory.formatter(options[key], options));
+      }
+    }
   }
-  if (includeAnnotations) {
-    ErrorHelper.stringParameterCheck(includeAnnotations, `DynamicsWebApi.${request.functionName}`, "request.includeAnnotations");
-    prefer.push(`odata.include-annotations="${includeAnnotations}"`);
+  return Array.from(prefer).join(",");
+};
+var preferOptionsFactory = {
+  respondAsync: {
+    validator: ErrorHelper.boolParameterCheck,
+    condition: (value) => !!value,
+    formatter: () => "respond-async"
+  },
+  backgroundOperationCallbackUrl: {
+    validator: ErrorHelper.stringParameterCheck,
+    condition: (value, options) => value && options.respondAsync,
+    formatter: (url) => `odata.callback;url="${url}"`
+  },
+  returnRepresentation: {
+    validator: ErrorHelper.boolParameterCheck,
+    condition: (value) => !!value,
+    formatter: () => "return=representation"
+  },
+  includeAnnotations: {
+    validator: ErrorHelper.stringParameterCheck,
+    condition: (value) => !!value,
+    formatter: (annotations) => `odata.include-annotations="${annotations}"`
+  },
+  maxPageSize: {
+    validator: (value, functionName) => value > 0 ? ErrorHelper.numberParameterCheck(value, functionName, "request.maxPageSize") : void 0,
+    condition: (value) => value > 0,
+    formatter: (size) => `odata.maxpagesize=${size}`
+  },
+  trackChanges: {
+    validator: ErrorHelper.boolParameterCheck,
+    condition: (value) => !!value,
+    formatter: () => "odata.track-changes"
+  },
+  continueOnError: {
+    validator: ErrorHelper.boolParameterCheck,
+    condition: (value) => !!value,
+    formatter: () => "odata.continue-on-error"
   }
-  if (maxPageSize && maxPageSize > 0) {
-    ErrorHelper.numberParameterCheck(maxPageSize, `DynamicsWebApi.${request.functionName}`, "request.maxPageSize");
-    prefer.push("odata.maxpagesize=" + maxPageSize);
-  }
-  if (trackChanges) {
-    ErrorHelper.boolParameterCheck(trackChanges, `DynamicsWebApi.${request.functionName}`, "request.trackChanges");
-    prefer.push("odata.track-changes");
-  }
-  if (continueOnError) {
-    ErrorHelper.boolParameterCheck(continueOnError, `DynamicsWebApi.${request.functionName}`, "request.continueOnError");
-    prefer.push("odata.continue-on-error");
-  }
-  return prefer.join(",");
 };
 
 // src/client/request/composers/headers.ts
@@ -2710,6 +2750,8 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to create a new record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TData - Type of the data to be created.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      * @example
      *const lead = {
@@ -2733,6 +2775,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve a record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      * @example
      *const request = {
@@ -2750,6 +2793,8 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to update a record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TData - Type of the data to be created.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.update = async (request) => update(request, __privateGet(this, _client));
@@ -2757,6 +2802,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to update a single value in the record.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.updateSingleProperty = async (request) => updateSingleProperty(request, __privateGet(this, _client));
@@ -2771,6 +2817,8 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to upsert a record.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TData - Type of the data to be created.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.upsert = async (request) => upsert(request, __privateGet(this, _client));
@@ -2789,6 +2837,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve records.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @param {string} [nextPageLink] - Use the value of the @odata.nextLink property with a new GET request to return the next page of data. Pass null to retrieveMultipleOptions.
      * @returns {Promise} D365 Web Api Response
      */
@@ -2797,11 +2846,13 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve all records.
      *
      * @param {DWARequest} request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveAll = (request) => retrieveAll(request, __privateGet(this, _client));
     /**
-     * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system. It is limited by the maximum number of entities that can be returned. Returns: Number
+     * Sends an asynchronous request to count records. IMPORTANT! The count value does not represent the total number of entities in the system.
+     * It is limited by the maximum number of entities that can be returned. Returns: Number
      *
      * @param request - An object that represents all possible options for a current request.
      * @returns {Promise} D365 Web Api Response
@@ -2817,6 +2868,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to execute FetchXml to retrieve records. Returns: DWA.Types.FetchXmlResponse
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.fetch = async (request) => fetchXml(request, __privateGet(this, _client));
@@ -2824,6 +2876,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to execute FetchXml to retrieve all records.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.fetchAll = async (request) => fetchXmlAll(request, __privateGet(this, _client));
@@ -2859,6 +2912,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Calls a Web API function
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.callFunction = async (request) => callFunction(request, __privateGet(this, _client));
@@ -2866,6 +2920,8 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Calls a Web API action
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the response to be returned.
+     * @template TAction - Type of the action to be executed.
      * @returns {Promise} D365 Web Api Response
      */
     this.callAction = async (request) => callAction(request, __privateGet(this, _client));
@@ -2873,6 +2929,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to create an entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.createEntity = (request) => createEntity(request, __privateGet(this, _client));
@@ -2880,6 +2937,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to update an entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.updateEntity = (request) => updateEntity(request, __privateGet(this, _client));
@@ -2887,6 +2945,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve a specific entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveEntity = (request) => retrieveEntity(request, __privateGet(this, _client));
@@ -2894,6 +2953,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve entity definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveEntities = (request) => retrieveEntities(__privateGet(this, _client), request);
@@ -2901,6 +2961,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to create an attribute.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.createAttribute = (request) => createAttribute(request, __privateGet(this, _client));
@@ -2908,6 +2969,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to update an attribute.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.updateAttribute = (request) => updateAttribute(request, __privateGet(this, _client));
@@ -2915,6 +2977,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve attribute metadata for a specified entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveAttributes = (request) => retrieveAttributes(request, __privateGet(this, _client));
@@ -2922,6 +2985,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve a specific attribute metadata for a specified entity definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveAttribute = (request) => retrieveAttribute(request, __privateGet(this, _client));
@@ -2929,6 +2993,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to create a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.createRelationship = (request) => createRelationship(request, __privateGet(this, _client));
@@ -2936,6 +3001,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to update a relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.updateRelationship = (request) => updateRelationship(request, __privateGet(this, _client));
@@ -2950,6 +3016,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve relationship definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveRelationships = (request) => retrieveRelationships(request, __privateGet(this, _client));
@@ -2957,6 +3024,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve a specific relationship definition.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveRelationship = (request) => retrieveRelationship(request, __privateGet(this, _client));
@@ -2964,6 +3032,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to create a Global Option Set definition
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.createGlobalOptionSet = (request) => createGlobalOptionSet(request, __privateGet(this, _client));
@@ -2971,6 +3040,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to update a Global Option Set.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.updateGlobalOptionSet = (request) => updateGlobalOptionSet(request, __privateGet(this, _client));
@@ -2985,6 +3055,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve Global Option Set definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TResponse - Type of the metadata to be returned.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveGlobalOptionSet = (request) => retrieveGlobalOptionSet(request, __privateGet(this, _client));
@@ -2992,6 +3063,7 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * Sends an asynchronous request to retrieve Global Option Set definitions.
      *
      * @param request - An object that represents all possible options for a current request.
+     * @template TValue - Type of the item returned in the "value" array.
      * @returns {Promise} D365 Web Api Response
      */
     this.retrieveGlobalOptionSets = (request) => retrieveGlobalOptionSets(request, __privateGet(this, _client));
