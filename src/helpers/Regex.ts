@@ -137,7 +137,7 @@ export function escapeSearchSpecialCharacters(value: string): string {
     return value.replace(SEARCH_SPECIAL_CHARACTERS_REGEX, "\\$&");
 }
 
-const PREFER_CALLBACK_URL_REGEX = /^odata\.callback;\s*url=["']?(.+)["']?$/;
+const PREFER_CALLBACK_URL_REGEX = /^odata\.callback;\s*url=["']?(.+?)["']?$/;
 export function extractPreferCallbackUrl(value: string): string | null {
     const match = PREFER_CALLBACK_URL_REGEX.exec(value);
     return match ? match[1] : null;

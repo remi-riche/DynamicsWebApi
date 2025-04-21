@@ -44,6 +44,7 @@ describe("Regex.", () => {
             expect(result3).to.be.null;
         });
     });
+
     describe("extractUuidFromUrl -", function () {
         it("uuid", function () {
             const result = Regex.extractUuidFromUrl(mocks.webApiUrl + "tests(fb15ee32-524d-41be-b6a0-7d0f28055d52)");
@@ -54,6 +55,32 @@ describe("Regex.", () => {
             expect(result).to.be.null;
             const result2 = Regex.extractUuidFromUrl(mocks.webApiUrl + "fb15ee32-524d-41be-b6a0-7d0f28055d52");
             expect(result2).to.be.null;
+        });
+    });
+
+    describe("extractPreferCallbackUrl -", function () {
+        it("url", function () {
+            const result = Regex.extractPreferCallbackUrl('odata.callback;url="https://test.com"');
+            expect(result).to.equal("https://test.com");
+        });
+        it("not url - returns null", function () {
+            const result = Regex.extractPreferCallbackUrl("something");
+            expect(result).to.be.null;
+        });
+    });
+
+    describe("getUpdateMethod -", function () {
+        it("PATCH", function () {
+            const result = Regex.getUpdateMethod("anything");
+            expect(result).to.equal("PATCH");
+        });
+        it("PUT", function () {
+            const result = Regex.getUpdateMethod("EntityDefinitions");
+            expect(result).to.equal("PUT");
+        });
+        it("not PUT or PATCH - returns null", function () {
+            const result = Regex.getUpdateMethod(null);
+            expect(result).to.equal("PATCH");
         });
     });
 });
