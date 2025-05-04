@@ -371,6 +371,18 @@ export declare class DynamicsWebApi {
      */
     autocomplete: AutocompleteFunction;
     /**
+     * Sends a request to the status monitor resource.
+     * @param backgroundOperationId - The ID of the background operation.
+     * @returns {Promise<BackgroundOperationStatusResponse>} Background operation status.
+     */
+    getBackgroundOperationStatus: (backgroundOperationId: string) => Promise<BackgroundOperationStatusResponse>;
+    /**
+     * Cancels a background operation via the status monitor resource.
+     * @param backgroundOperationId - The ID of the background operation.
+     * @returns {Promise<BackgroundOperationStatusResponse>} Background operation status.
+     */
+    cancelBackgroundOperation: (backgroundOperationId: string) => Promise<BackgroundOperationStatusResponse>;
+    /**
      * Starts a batch request.
      */
     startBatch: () => void;
@@ -1403,5 +1415,23 @@ export interface SuggestResponseValue<TDocument = any> {
      */
     Document: TDocument;
 }
+export type BackgroundOperationStatusResponse = Record<string, any> & {
+    /**
+     * Background operation error code.
+     */
+    backgroundOperationErrorCode?: number;
+    /**
+     * Background operation error message.
+     */
+    backgroundOperationErrorMessage?: string;
+    /**
+     * Background operation state code.
+     */
+    backgroundOperationStateCode: number;
+    /**
+     * Background operation status code.
+     */
+    backgroundOperationStatusCode: number;
+};
 export {};
 //# sourceMappingURL=dynamics-web-api.d.ts.map

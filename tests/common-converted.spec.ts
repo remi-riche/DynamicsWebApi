@@ -6,7 +6,7 @@ import { DWA } from "../src/dwa";
 import * as Utility from "../src/utils/Utility";
 import { composeUrl, composeRequest, composeHeaders } from "../src/client/request/composers";
 import { ErrorHelper } from "../src/helpers/ErrorHelper";
-import { data as _data, webApiUrl, responses } from "./stubs";
+import { data as _data, webApiUrl, responses, serviceApiUrl } from "./stubs";
 import { dateReviver } from "../src/client/helpers/dateReviver";
 import * as RequestClient from "../src/client/RequestClient";
 import { parseResponse } from "../src/client/helpers/parseResponse";
@@ -2138,6 +2138,7 @@ describe("RequestClient.makeRequest", function () {
             let config: InternalConfig = {
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
                 useEntityNames: true,
             };
             const object = await RequestClient.makeRequest(request, config);
@@ -2185,6 +2186,7 @@ describe("RequestClient.makeRequest", function () {
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
                 useEntityNames: true,
+                serviceApi: { url: serviceApiUrl },
             };
 
             const object = await RequestClient.makeRequest(request, config);
@@ -2246,6 +2248,7 @@ describe("RequestClient.makeRequest", function () {
             let config: InternalConfig = {
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
                 useEntityNames: true,
             };
             const object = await RequestClient.makeRequest(request, config);
@@ -2292,6 +2295,7 @@ describe("RequestClient.makeRequest", function () {
             let config: InternalConfig = {
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
                 useEntityNames: true,
             };
             const object = await RequestClient.makeRequest(request, config);
@@ -2333,6 +2337,7 @@ describe("RequestClient.makeRequest", function () {
             let config: InternalConfig = {
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
             };
 
             try {
@@ -2373,6 +2378,7 @@ describe("RequestClient.makeRequest", function () {
                 timeout: 500,
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
             };
             try {
                 const object = await RequestClient.makeRequest(request, config);
@@ -2412,6 +2418,7 @@ describe("RequestClient.makeRequest", function () {
             let config: InternalConfig = {
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
             };
 
             try {
@@ -2452,6 +2459,7 @@ describe("RequestClient.makeRequest", function () {
                 timeout: 500,
                 dataApi: { url: webApiUrl },
                 searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
             };
 
             try {
@@ -2509,7 +2517,11 @@ describe("RequestClient.makeRequest", function () {
                 functionName: "test",
                 collection: url,
             };
-            const object = await RequestClient.makeRequest(request, { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl } });
+            const object = await RequestClient.makeRequest(request, {
+                dataApi: { url: webApiUrl },
+                searchApi: { url: webApiUrl },
+                serviceApi: { url: serviceApiUrl },
+            });
 
             var multiple = responses.multiple();
             //delete multiple.oDataContext;
@@ -2547,7 +2559,11 @@ describe("RequestClient.sendRequest", function () {
         it("returns a correct response", async function () {
             const object = await RequestClient.sendRequest(
                 { method: "PATCH", path: url, data: _data.testEntityAdditionalAttributesWithExpand, async: true },
-                { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl } },
+                {
+                    dataApi: { url: webApiUrl },
+                    searchApi: { url: webApiUrl },
+                    serviceApi: { url: serviceApiUrl },
+                },
             );
             var expectedO = {
                 status: responses.basicEmptyResponseSuccess.status,
@@ -2608,7 +2624,7 @@ describe("RequestClient.sendRequest", function () {
             try {
                 const object = await RequestClient.sendRequest(
                     { method: "POST", path: url, data: _data.testEntityAdditionalAttributes, async: true, timeout: 500 },
-                    { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl } },
+                    { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl }, serviceApi: { url: serviceApiUrl } },
                 );
                 expect(object).to.be.undefined;
             } catch (error: any) {
@@ -2639,7 +2655,7 @@ describe("RequestClient.sendRequest", function () {
             try {
                 const object = await RequestClient.sendRequest(
                     { method: "POST", path: url, data: _data.testEntityAdditionalAttributes, async: true, timeout: 500 },
-                    { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl } },
+                    { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl }, serviceApi: { url: serviceApiUrl } },
                 );
                 expect(object).to.be.undefined;
             } catch (error: any) {
@@ -2663,7 +2679,7 @@ describe("empty batch payload", function () {
         try {
             const object = await RequestClient.sendRequest(
                 { method: "POST", path: "$batch", async: true },
-                { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl } },
+                { dataApi: { url: webApiUrl }, searchApi: { url: webApiUrl }, serviceApi: { url: serviceApiUrl } },
             );
             expect(object).to.be.undefined;
         } catch (object: any) {

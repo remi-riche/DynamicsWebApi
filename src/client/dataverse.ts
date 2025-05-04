@@ -1,6 +1,6 @@
 import { Config } from "../dynamics-web-api";
 import type { InternalRequest, WebApiResponse } from "../types";
-import { ConfigurationUtility, type InternalConfig } from "../utils/Config";
+import { defaultConfig, mergeConfig, type InternalConfig } from "../utils/Config";
 import { makeRequest } from "./RequestClient";
 
 // module is in development; multiple changes might be made here
@@ -17,12 +17,12 @@ export interface IDataverseClient {
 }
 
 export class DataverseClient implements IDataverseClient {
-    #config = ConfigurationUtility.default();
+    #config = defaultConfig();
     #isBatch = false;
     #batchRequestId: string | null = null;
 
     constructor(config?: Config) {
-        ConfigurationUtility.merge(this.#config, config);
+        mergeConfig(this.#config, config);
     }
     get batchRequestId(): string | null {
         return this.#batchRequestId;
@@ -43,7 +43,7 @@ export class DataverseClient implements IDataverseClient {
         this.#isBatch = value;
     }
 
-    setConfig = (config: Config) => ConfigurationUtility.merge(this.#config, config);
+    setConfig = (config: Config) => mergeConfig(this.#config, config);
 
     makeRequest = (request: InternalRequest): Promise<WebApiResponse | undefined> => {
         request.isBatch = this.#isBatch;

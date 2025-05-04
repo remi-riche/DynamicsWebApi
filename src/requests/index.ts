@@ -45,3 +45,7 @@ export * from "./metadata/retrieveCsdlMetadata";
 export * from "./search/query";
 export * from "./search/suggest";
 export * from "./search/autocomplete";
+
+//background operation status monitor
+export * from "./backgroundOperation/getStatus";
+export * from "./backgroundOperation/cancel";

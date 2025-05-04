@@ -147,7 +147,7 @@ var init_Regex = __esm({
     FETCH_XML_REPLACE_REGEX = /^(<fetch)/;
     DATE_FORMAT_REGEX = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:Z|[-+]\d{2}:\d{2})$/;
     SEARCH_SPECIAL_CHARACTERS_REGEX = /[+\-&|!(){}[\]^"~*?:\\\/]/g;
-    PREFER_CALLBACK_URL_REGEX = /^odata\.callback;\s*url=["']?(.+)["']?$/;
+    PREFER_CALLBACK_URL_REGEX = /^odata\.callback;\s*url=["']?(.+?)["']?$/;
   }
 });
 
@@ -877,16 +877,32 @@ var LIBRARY_NAME = "DynamicsWebApi";
 
 // src/utils/Config.ts
 var FUNCTION_NAME = `${LIBRARY_NAME}.setConfig`;
+var apiConfigs = ["dataApi", "searchApi", "serviceApi"];
 var getApiUrl = (serverUrl, apiConfig) => {
   if (isRunningWithinPortals()) {
     return new URL("_api", global.window.location.origin).toString() + "/";
   } else {
     if (!serverUrl) serverUrl = getClientUrl();
-    return new URL(`api/${apiConfig.path}/v${apiConfig.version}`, serverUrl).toString() + "/";
+    let url = "api";
+    if (apiConfig.path) {
+      url += `/${apiConfig.path}`;
+    }
+    if (apiConfig.version) {
+      url += `/v${apiConfig.version}`;
+    }
+    return new URL(url, serverUrl).toString() + "/";
   }
 };
-var mergeApiConfigs = (apiConfig, apiType, internalConfig) => {
+var mergeSearchApiOptions = (internalApiConfig, options) => {
+  if (!options) return;
+  if (options.escapeSpecialCharacters != null) {
+    ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
+    internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
+  }
+};
+var mergeApiConfig = (internalConfig, apiType, config) => {
   const internalApiConfig = internalConfig[apiType];
+  const apiConfig = config == null ? void 0 : config[apiType];
   if (apiConfig == null ? void 0 : apiConfig.version) {
     ErrorHelper.stringParameterCheck(apiConfig.version, FUNCTION_NAME, `config.${apiType}.version`);
     internalApiConfig.version = apiConfig.version;
@@ -896,95 +912,89 @@ var mergeApiConfigs = (apiConfig, apiType, internalConfig) => {
     internalApiConfig.path = apiConfig.path;
   }
   if (apiType === "searchApi") {
-    mergeSearchApiOptions(apiConfig == null ? void 0 : apiConfig.options, internalApiConfig);
+    mergeSearchApiOptions(internalApiConfig, apiConfig == null ? void 0 : apiConfig.options);
   }
   internalApiConfig.url = getApiUrl(internalConfig.serverUrl, internalApiConfig);
 };
-var mergeSearchApiOptions = (options, internalApiConfig) => {
-  if (!options) return;
-  if (options.escapeSpecialCharacters != null) {
-    ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
-    internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
+function mergeConfig(internalConfig, config) {
+  if (config == null ? void 0 : config.serverUrl) {
+    ErrorHelper.stringParameterCheck(config.serverUrl, FUNCTION_NAME, "config.serverUrl");
+    internalConfig.serverUrl = config.serverUrl;
   }
-};
-var ConfigurationUtility = class {
-  static merge(internalConfig, config) {
-    if (config == null ? void 0 : config.serverUrl) {
-      ErrorHelper.stringParameterCheck(config.serverUrl, FUNCTION_NAME, "config.serverUrl");
-      internalConfig.serverUrl = config.serverUrl;
-    }
-    mergeApiConfigs(config == null ? void 0 : config.dataApi, "dataApi", internalConfig);
-    mergeApiConfigs(config == null ? void 0 : config.searchApi, "searchApi", internalConfig);
-    if (config == null ? void 0 : config.impersonate) {
-      internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, FUNCTION_NAME, "config.impersonate");
-    }
-    if (config == null ? void 0 : config.impersonateAAD) {
-      internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, FUNCTION_NAME, "config.impersonateAAD");
-    }
-    if (config == null ? void 0 : config.onTokenRefresh) {
-      ErrorHelper.callbackParameterCheck(config.onTokenRefresh, FUNCTION_NAME, "config.onTokenRefresh");
-      internalConfig.onTokenRefresh = config.onTokenRefresh;
-    }
-    if (config == null ? void 0 : config.includeAnnotations) {
-      ErrorHelper.stringParameterCheck(config.includeAnnotations, FUNCTION_NAME, "config.includeAnnotations");
-      internalConfig.includeAnnotations = config.includeAnnotations;
-    }
-    if (config == null ? void 0 : config.timeout) {
-      ErrorHelper.numberParameterCheck(config.timeout, FUNCTION_NAME, "config.timeout");
-      internalConfig.timeout = config.timeout;
-    }
-    if (config == null ? void 0 : config.maxPageSize) {
-      ErrorHelper.numberParameterCheck(config.maxPageSize, FUNCTION_NAME, "config.maxPageSize");
-      internalConfig.maxPageSize = config.maxPageSize;
-    }
-    if ((config == null ? void 0 : config.returnRepresentation) != null) {
-      ErrorHelper.boolParameterCheck(config.returnRepresentation, FUNCTION_NAME, "config.returnRepresentation");
-      internalConfig.returnRepresentation = config.returnRepresentation;
-    }
-    if ((config == null ? void 0 : config.useEntityNames) != null) {
-      ErrorHelper.boolParameterCheck(config.useEntityNames, FUNCTION_NAME, "config.useEntityNames");
-      internalConfig.useEntityNames = config.useEntityNames;
-    }
-    if (config == null ? void 0 : config.headers) {
-      internalConfig.headers = config.headers;
-    }
-    if (config == null ? void 0 : config.proxy) {
-      ErrorHelper.parameterCheck(config.proxy, FUNCTION_NAME, "config.proxy");
-      if (config.proxy.url) {
-        ErrorHelper.stringParameterCheck(config.proxy.url, FUNCTION_NAME, "config.proxy.url");
-        if (config.proxy.auth) {
-          ErrorHelper.parameterCheck(config.proxy.auth, FUNCTION_NAME, "config.proxy.auth");
-          ErrorHelper.stringParameterCheck(config.proxy.auth.username, FUNCTION_NAME, "config.proxy.auth.username");
-          ErrorHelper.stringParameterCheck(config.proxy.auth.password, FUNCTION_NAME, "config.proxy.auth.password");
-        }
+  apiConfigs.forEach((apiType) => {
+    mergeApiConfig(internalConfig, apiType, config);
+  });
+  if (config == null ? void 0 : config.impersonate) {
+    internalConfig.impersonate = ErrorHelper.guidParameterCheck(config.impersonate, FUNCTION_NAME, "config.impersonate");
+  }
+  if (config == null ? void 0 : config.impersonateAAD) {
+    internalConfig.impersonateAAD = ErrorHelper.guidParameterCheck(config.impersonateAAD, FUNCTION_NAME, "config.impersonateAAD");
+  }
+  if (config == null ? void 0 : config.onTokenRefresh) {
+    ErrorHelper.callbackParameterCheck(config.onTokenRefresh, FUNCTION_NAME, "config.onTokenRefresh");
+    internalConfig.onTokenRefresh = config.onTokenRefresh;
+  }
+  if (config == null ? void 0 : config.includeAnnotations) {
+    ErrorHelper.stringParameterCheck(config.includeAnnotations, FUNCTION_NAME, "config.includeAnnotations");
+    internalConfig.includeAnnotations = config.includeAnnotations;
+  }
+  if (config == null ? void 0 : config.timeout) {
+    ErrorHelper.numberParameterCheck(config.timeout, FUNCTION_NAME, "config.timeout");
+    internalConfig.timeout = config.timeout;
+  }
+  if (config == null ? void 0 : config.maxPageSize) {
+    ErrorHelper.numberParameterCheck(config.maxPageSize, FUNCTION_NAME, "config.maxPageSize");
+    internalConfig.maxPageSize = config.maxPageSize;
+  }
+  if ((config == null ? void 0 : config.returnRepresentation) != null) {
+    ErrorHelper.boolParameterCheck(config.returnRepresentation, FUNCTION_NAME, "config.returnRepresentation");
+    internalConfig.returnRepresentation = config.returnRepresentation;
+  }
+  if ((config == null ? void 0 : config.useEntityNames) != null) {
+    ErrorHelper.boolParameterCheck(config.useEntityNames, FUNCTION_NAME, "config.useEntityNames");
+    internalConfig.useEntityNames = config.useEntityNames;
+  }
+  if (config == null ? void 0 : config.headers) {
+    internalConfig.headers = config.headers;
+  }
+  if (config == null ? void 0 : config.proxy) {
+    ErrorHelper.parameterCheck(config.proxy, FUNCTION_NAME, "config.proxy");
+    if (config.proxy.url) {
+      ErrorHelper.stringParameterCheck(config.proxy.url, FUNCTION_NAME, "config.proxy.url");
+      if (config.proxy.auth) {
+        ErrorHelper.parameterCheck(config.proxy.auth, FUNCTION_NAME, "config.proxy.auth");
+        ErrorHelper.stringParameterCheck(config.proxy.auth.username, FUNCTION_NAME, "config.proxy.auth.username");
+        ErrorHelper.stringParameterCheck(config.proxy.auth.password, FUNCTION_NAME, "config.proxy.auth.password");
       }
-      internalConfig.proxy = config.proxy;
     }
+    internalConfig.proxy = config.proxy;
   }
-  static default() {
-    return {
-      serverUrl: null,
-      impersonate: null,
-      impersonateAAD: null,
-      onTokenRefresh: null,
-      includeAnnotations: null,
-      maxPageSize: null,
-      returnRepresentation: null,
-      proxy: null,
-      dataApi: {
-        path: "data",
-        version: "9.2",
-        url: ""
-      },
-      searchApi: {
-        path: "search",
-        version: "1.0",
-        url: ""
-      }
-    };
-  }
-};
-ConfigurationUtility.mergeApiConfigs = mergeApiConfigs;
+}
+function defaultConfig() {
+  return {
+    serverUrl: null,
+    impersonate: null,
+    impersonateAAD: null,
+    onTokenRefresh: null,
+    includeAnnotations: null,
+    maxPageSize: null,
+    returnRepresentation: null,
+    proxy: null,
+    dataApi: {
+      path: "data",
+      version: "9.2",
+      url: ""
+    },
+    searchApi: {
+      path: "search",
+      version: "1.0",
+      url: ""
+    },
+    serviceApi: {
+      url: ""
+    }
+  };
+}
 
 // src/client/RequestClient.ts
 init_Utility();
@@ -1595,7 +1605,9 @@ var sendRequest = async (request, config) => {
     delete _batchRequestCollection[request.requestId];
   } else {
     processedData = !isBatchConverted ? processData(request.data, config) : request.data;
-    if (!isBatchConverted) request.headers = setStandardHeaders(request.headers);
+    if (!isBatchConverted && request.includeDefaultDataverseHeaders !== false) {
+      request.headers = setStandardHeaders(request.headers);
+    }
   }
   if (config.impersonate && !request.headers["MSCRMCallerID"]) {
     request.headers["MSCRMCallerID"] = config.impersonate;
@@ -1662,16 +1674,16 @@ var getCollectionName = (entityName) => {
 var _config, _isBatch, _batchRequestId;
 var DataverseClient = class {
   constructor(config) {
-    __privateAdd(this, _config, ConfigurationUtility.default());
+    __privateAdd(this, _config, defaultConfig());
     __privateAdd(this, _isBatch, false);
     __privateAdd(this, _batchRequestId, null);
-    this.setConfig = (config) => ConfigurationUtility.merge(__privateGet(this, _config), config);
+    this.setConfig = (config) => mergeConfig(__privateGet(this, _config), config);
     this.makeRequest = (request) => {
       request.isBatch = __privateGet(this, _isBatch);
       if (__privateGet(this, _batchRequestId)) request.requestId = __privateGet(this, _batchRequestId);
       return makeRequest(request, __privateGet(this, _config));
     };
-    ConfigurationUtility.merge(__privateGet(this, _config), config);
+    mergeConfig(__privateGet(this, _config), config);
   }
   get batchRequestId() {
     return __privateGet(this, _batchRequestId);
@@ -2729,6 +2741,51 @@ async function autocomplete(request, client) {
   return parseAutocompleteResponse(response.data, client.config.searchApi);
 }
 
+// src/requests/backgroundOperation/getStatus.ts
+init_ErrorHelper();
+var FUNCTION_NAME45 = "getBackgroundOperationStatus";
+var REQUEST_NAME43 = `${LIBRARY_NAME}.${FUNCTION_NAME45}`;
+async function getBackgroundOperationStatus(backgroundOperationId, client) {
+  ErrorHelper.throwBatchIncompatible(REQUEST_NAME43, client.isBatch);
+  ErrorHelper.keyParameterCheck(backgroundOperationId, REQUEST_NAME43, "backgroundOperationId");
+  const internalRequest = {
+    method: "GET",
+    addPath: `backgroundoperation/${backgroundOperationId}`,
+    functionName: FUNCTION_NAME45,
+    apiConfig: client.config.serviceApi,
+    includeDefaultDataverseHeaders: false,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    //todo: need to get rid of this parameter somehow
+    _isUnboundRequest: true
+  };
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
+
+// src/requests/backgroundOperation/cancel.ts
+init_ErrorHelper();
+var FUNCTION_NAME46 = "cancelBackgroundOperation";
+var REQUEST_NAME44 = `${LIBRARY_NAME}.${FUNCTION_NAME46}`;
+async function cancelBackgroundOperation(backgroundOperationId, client) {
+  ErrorHelper.throwBatchIncompatible(REQUEST_NAME44, client.isBatch);
+  ErrorHelper.keyParameterCheck(backgroundOperationId, REQUEST_NAME44, "backgroundOperationId");
+  const internalRequest = {
+    method: "DELETE",
+    addPath: `backgroundoperation/${backgroundOperationId}`,
+    functionName: FUNCTION_NAME46,
+    apiConfig: client.config.serviceApi,
+    includeDefaultDataverseHeaders: false,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    _isUnboundRequest: true
+  };
+  const response = await client.makeRequest(internalRequest);
+  return response == null ? void 0 : response.data;
+}
+
 // src/dynamics-web-api.ts
 var _client;
 var _DynamicsWebApi = class _DynamicsWebApi {
@@ -3101,6 +3158,18 @@ var _DynamicsWebApi = class _DynamicsWebApi {
      * @returns {Promise<AutocompleteResponse>} Result of an autocomplete.
      */
     this.autocomplete = async (request) => autocomplete(request, __privateGet(this, _client));
+    /**
+     * Sends a request to the status monitor resource.
+     * @param backgroundOperationId - The ID of the background operation.
+     * @returns {Promise<BackgroundOperationStatusResponse>} Background operation status.
+     */
+    this.getBackgroundOperationStatus = async (backgroundOperationId) => getBackgroundOperationStatus(backgroundOperationId, __privateGet(this, _client));
+    /**
+     * Cancels a background operation via the status monitor resource.
+     * @param backgroundOperationId - The ID of the background operation.
+     * @returns {Promise<BackgroundOperationStatusResponse>} Background operation status.
+     */
+    this.cancelBackgroundOperation = async (backgroundOperationId) => cancelBackgroundOperation(backgroundOperationId, __privateGet(this, _client));
     /**
      * Starts a batch request.
      */

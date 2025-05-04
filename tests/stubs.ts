@@ -1,6 +1,6 @@
 ﻿//<cookie pagenumber="2" pagingcookie="<cookie page="1"><accountid last="{EF72AE29-B3DE-E611-8102-5065F38A7BF1}" first="{475B158C-541C-E511-80D3-3863BB347BA8}" /></cookie>" istracking="False" />
 
-import { AutocompleteResponse, QueryResponse, SuggestResponse } from "../src/dynamics-web-api";
+import { AutocompleteResponse, BackgroundOperationStatusResponse, QueryResponse, SuggestResponse } from "../src/dynamics-web-api";
 
 //<cookie pagenumber="2" pagingcookie="<cookie page="2"><accountid last="{F972AE29-B3DE-E611-8102-5065F38A7BF1}" first="{F172AE29-B3DE-E611-8102-5065F38A7BF1}" /></cookie>" istracking="False" />
 const serverUrl = "http://testorg.crm.dynamics.com";
@@ -17,6 +17,7 @@ global.Xrm = {
     },
 };
 
+const serviceApiUrl = `${serverUrl}/api/`;
 const webApiUrl = `${serverUrl}/api/data/v8.2/`;
 const webApiUrl81 = `${serverUrl}/api/data/v8.1/`;
 const webApiUrl80 = `${serverUrl}/api/data/v8.0/`;
@@ -261,6 +262,11 @@ const dataStubs = {
             message: "ERROR!",
         },
     } as Record<string, any>,
+    backgroundOperationStatus: {
+        backgroundOperationStateCode: 1,
+        backgroundOperationStatusCode: 1,
+        testOutputParam: "testOutputParam",
+    } as BackgroundOperationStatusResponse,
     batch:
         "--dwa_batch_XXX\r\n" +
         "Content-Type: application/http\r\n" +
@@ -1357,6 +1363,11 @@ const responseStubs = {
         }),
         responseHeaders: dataStubs.defaultResponseHeaders,
     },
+    backgroundOperationStatusResponse: {
+        status: 200,
+        responseText: JSON.stringify(dataStubs.backgroundOperationStatus),
+        responseHeaders: dataStubs.defaultErrorHeaders,
+    },
     responseFormattedEntity: function () {
         const stub = {
             ...dataStubs.testEntityFormatted,
@@ -1544,6 +1555,7 @@ export {
     // Xrm,
     dataStubs as data,
     responseStubs as responses,
+    serviceApiUrl,
     webApiUrl,
     webApiUrl81,
     webApiUrl80,

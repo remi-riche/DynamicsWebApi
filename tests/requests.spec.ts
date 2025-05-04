@@ -3,11 +3,10 @@ import { IDataverseClient } from "../src/client/dataverse";
 import { Config } from "../src/dynamics-web-api";
 import { countAll } from "../src/requests";
 import { InternalRequest, WebApiResponse } from "../src/types";
-import { ConfigurationUtility } from "../src/utils/Config";
-import { makeRequest } from "../src/client/RequestClient";
+import { defaultConfig } from "../src/utils/Config";
 
 const defaultClient: IDataverseClient = {
-    config: ConfigurationUtility.default(),
+    config: defaultConfig(),
     isBatch: false,
     batchRequestId: null,
     makeRequest: async (_request: InternalRequest) => undefined,

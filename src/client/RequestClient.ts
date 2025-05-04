@@ -131,7 +131,12 @@ export const sendRequest = async (request: Core.InternalRequest, config: Interna
     } else {
         processedData = !isBatchConverted ? processData(request.data, config) : request.data;
 
-        if (!isBatchConverted) request.headers = setStandardHeaders(request.headers);
+        // don't set headers if the request is a part of batch request
+        // or if it is set to not include default dataverse headers
+        // todo: use the latter option in batch requests as well
+        if (!isBatchConverted && request.includeDefaultDataverseHeaders !== false) {
+            request.headers = setStandardHeaders(request.headers);
+        }
     }
 
     if (config.impersonate && !request.headers!["MSCRMCallerID"]) {

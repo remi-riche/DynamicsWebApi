@@ -3,7 +3,8 @@ import nock from "nock";
 import * as mocks from "./stubs";
 
 import * as RequestClient from "../src/client/RequestClient";
-import { ConfigurationUtility, InternalConfig } from "../src/utils/Config";
+import * as ConfigurationUtility from "../src/utils/Config";
+import type { InternalConfig } from "../src/utils/Config";
 import * as Core from "../src/types";
 import * as Regex from "../src/helpers/Regex";
 import * as RequestUtility from "../src/client/request";
@@ -102,7 +103,7 @@ describe("RequestClient.sendRequest", () => {
             try {
                 const object = await RequestClient.sendRequest(
                     { method: "POST", path: url, data: mocks.data.testEntity, async: true },
-                    { dataApi: { url: mocks.webApiUrl }, searchApi: { url: mocks.webApiUrl } },
+                    { dataApi: { url: mocks.webApiUrl }, searchApi: { url: mocks.webApiUrl }, serviceApi: { url: mocks.serverUrl } },
                 );
                 expect(object).to.be.undefined;
             } catch (object: any) {
@@ -156,6 +157,7 @@ describe("RequestClient.makeRequest", () => {
             const config: InternalConfig = {
                 searchApi: { url: "" },
                 dataApi: { url: mocks.webApiUrl },
+                serviceApi: { url: mocks.serverUrl },
             };
 
             controller.signal.addEventListener("abort", () =>
@@ -232,6 +234,7 @@ describe("RequestClient.makeRequest", () => {
             const config: InternalConfig = {
                 searchApi: { url: "" },
                 dataApi: { url: mocks.webApiUrl },
+                serviceApi: { url: mocks.serverUrl },
             };
 
             try {
@@ -268,6 +271,9 @@ describe("RequestUtility.", () => {
             searchApi: {
                 url: "search",
                 version: "9.2",
+            },
+            serviceApi: {
+                url: "service",
             },
         };
 
@@ -315,7 +321,7 @@ describe("Composers.composeHeaders -", () => {
 });
 
 describe("Config.merge -", () => {
-    const defaultConfig: InternalConfig = ConfigurationUtility.default();
+    const defaultConfig: InternalConfig = ConfigurationUtility.defaultConfig();
 
     it("returnRepresentation = true -> false", () => {
         const internalConfig: InternalConfig = {
@@ -323,7 +329,7 @@ describe("Config.merge -", () => {
             returnRepresentation: true,
         };
 
-        ConfigurationUtility.merge(internalConfig, {
+        ConfigurationUtility.mergeConfig(internalConfig, {
             returnRepresentation: false,
         });
 
@@ -335,7 +341,7 @@ describe("Config.merge -", () => {
             ...defaultConfig,
         };
 
-        ConfigurationUtility.merge(internalConfig, {
+        ConfigurationUtility.mergeConfig(internalConfig, {
             searchApi: {
                 options: {
                     escapeSpecialCharacters: true,
@@ -355,7 +361,7 @@ describe("Config.merge -", () => {
             },
         };
 
-        ConfigurationUtility.merge(internalConfig, {
+        ConfigurationUtility.mergeConfig(internalConfig, {
             searchApi: {
                 options: {
                     escapeSpecialCharacters: false,
@@ -375,7 +381,7 @@ describe("Config.merge -", () => {
             },
         };
 
-        ConfigurationUtility.merge(internalConfig, {
+        ConfigurationUtility.mergeConfig(internalConfig, {
             searchApi: {
                 options: {
                     escapeSpecialCharacters: true,
@@ -395,7 +401,7 @@ describe("Config.merge -", () => {
             },
         };
 
-        ConfigurationUtility.merge(internalConfig, {
+        ConfigurationUtility.mergeConfig(internalConfig, {
             searchApi: {
                 options: {},
             },
@@ -413,7 +419,7 @@ describe("Config.merge -", () => {
             },
         };
 
-        ConfigurationUtility.merge(internalConfig, {
+        ConfigurationUtility.mergeConfig(internalConfig, {
             searchApi: {
                 version: "2.0",
             },
@@ -421,6 +427,26 @@ describe("Config.merge -", () => {
 
         expect(internalConfig.searchApi.escapeSpecialCharacters).to.be.false;
         expect(internalConfig.searchApi.version).to.be.eq("2.0");
+    });
+
+    it("getApiUrl. serverUrl", () => {
+        const url = ConfigurationUtility.getApiUrl("https://test.com", {});
+        expect(url).to.be.eq("https://test.com/api/");
+    });
+
+    it("getApiUrl. serverUrl + path", () => {
+        const url = ConfigurationUtility.getApiUrl("https://test.com", { path: "test" });
+        expect(url).to.be.eq("https://test.com/api/test/");
+    });
+
+    it("getApiUrl. serverUrl + version", () => {
+        const url = ConfigurationUtility.getApiUrl("https://test.com", { version: "1.0" });
+        expect(url).to.be.eq("https://test.com/api/v1.0/");
+    });
+
+    it("getApiUrl. serverUrl + path, version", () => {
+        const url = ConfigurationUtility.getApiUrl("https://test.com", { path: "test", version: "1.0" });
+        expect(url).to.be.eq("https://test.com/api/test/v1.0/");
     });
 });
 

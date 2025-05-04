@@ -109,10 +109,6 @@ v2 breaking changes are [here](/.github/BREAKING_CHANGES_V2.md). List of new fea
   * [Delete Global Option Set](#delete-global-option-set)
   * [Retrieve Global Option Set](#retrieve-global-option-set)
   * [Retrieve Multiple Global Option Sets](#retrieve-multiple-global-option-sets)
-* [Retrieve CSDL $metadata document](#retrieve-csdl-metadata-document)
-* [Formatted Values and Lookup Columns](#formatted-values-and-lookup-columns)
-* [Using Alternate Keys](#using-alternate-keys)
-* [Making requests using Entity Logical Names](#making-requests-using-entity-logical-names)
 * [Work with File Fields/Columns](#work-with-file-fields)
     * [Upload file](#upload-file)
     * [Download file](#download-file)
@@ -121,7 +117,12 @@ v2 breaking changes are [here](/.github/BREAKING_CHANGES_V2.md). List of new fea
     * [Search](#search)
     * [Suggest](#suggest)
     * [Autocomplete](#autocomplete)
+* [Retrieve CSDL $metadata document](#retrieve-csdl-metadata-document)
+* [Background Operations](#background-operations)
 * [Abort Request](#abort-request)
+* [Formatted Values and Lookup Columns](#formatted-values-and-lookup-columns)
+* [Using Alternate Keys](#using-alternate-keys)
+* [Making requests using Entity Logical Names](#making-requests-using-entity-logical-names)
 * [Using Proxy](#using-proxy)
 * [Using TypeScript Declaration Files](#using-typescript-declaration-files)
 * [In Progress / Feature List](#in-progress--feature-list)
@@ -157,7 +158,7 @@ Once the web file is uploaded, it can be included in a template, a page or a for
 
 With CDN, it is a bit easier: no need to create and upload a web file - just include the script in your template, page or a form:
 ```html
-<script type="text/javascript" src="https://unpkg.com/dynamics-web-api@2.1.4/dist/dynamics-web-api.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/dynamics-web-api@2.3.0/dist/dynamics-web-api.min.js"></script>
 ```
 
 And you are good to go! DynamicsWebApi will automatically detect if the library is running on Power Pages and will supply an anti-forgery token with each request.
@@ -277,8 +278,9 @@ dynamicsWebApi.setConfig({ dataApi: { version: "9.0" } });
 #### Configuration Parameters
 Property Name | Type | Description
 ------------ | ------------- | -------------
+backgroundOperationCallbackUrl | `string` | `v2.3.0+` Background operation callback URL. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/background-operations?tabs=webapi#request-a-callback)
 dataApi | `ApiConfig` | Configuration object for Dataverse Web API. The name is based on the url path `data`.
-headers | `Object` | `v2.1+` Custom default headers to supply with each request. For example: `{ "my-header": "value", "another-header": "another-value" }`.
+headers | `Object` | `v2.1.0+` Custom default headers to supply with each request. For example: `{ "my-header": "value", "another-header": "another-value" }`.
 impersonate | `string` | Impersonates a user based on their systemuserid by adding a "MSCRMCallerID" header. A String representing the GUID value for the Dynamics 365 systemuserid. [More Info](https://docs.microsoft.com/en-us/powerapps/developer/common-data-service/webapi/impersonate-another-user-web-api)
 impersonateAAD | `string` | Impersonates a user based on their Azure Active Directory (AAD) object id by passing that value along with the header "CallerObjectId". A String should represent a GUID value. [More Info](https://docs.microsoft.com/en-us/powerapps/developer/common-data-service/webapi/impersonate-another-user-web-api)
 includeAnnotations | `string` | Defaults Prefer header with value "odata.include-annotations=" and the specified annotation. Annotations provide additional information about lookups, options sets and other complex attribute types.
@@ -302,7 +304,7 @@ If you are using `DynamicsWebApi` **outside Microsoft Dynamics 365** and set `us
 
 | Property Name | Type | Description |
 |--------|--------|--------|
-| path | `string` | A path to API, for example: "data" or "search". Optional. |
+| path | `string` | A path to an API, for example: "data" or "search". Optional. |
 | version | `string` | API Version, for example: "1.0" or "9.2". Optional. |
 
 Both `dataApi` and `searchApi` can be omitted from a configuration. Their default values are:
@@ -332,6 +334,12 @@ Both `dataApi` and `searchApi` can be omitted from a configuration. Their defaul
 |--------|--------|--------|
 | path | `string` | Optional. A path to API, default: "search". |
 | version | `string` | Optional. API Version, default: "1.0". |
+| options | `SearchApiOptions` | `v2.3.0+` Optional. Search API options. |
+
+**SearchApiOptions** properties:
+| Property Name | Type | Description |
+|--------|--------|--------|
+| escapeSpecialCharacters | `boolean` | **Works only with Search API 2.0**. Optional. Escapes special characters in the search string. |
 
 ## Request Examples
 
@@ -349,6 +357,7 @@ actionName | `string` | `callAction` | Web API Action name.
 addAnnotations | `boolean` | `retrieveCsdlMetadata` | If set to `true` the document will include many different kinds of annotations that can be useful. Most annotations are not included by default because they increase the total size of the document.
 apply | `string` | `retrieveMultiple`, `retrieveAll` | Sets the $apply system query option to aggregate and group your data dynamically. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/webapi/query/aggregate-data)
 async | `boolean` | All | **XHR requests only!** Indicates whether the requests should be made synchronously or asynchronously. Default value is `true` (asynchronously).
+backgroundOperationCallbackUrl | `string` | `callAction` | `v2.3.0+` Background operation callback URL. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/background-operations?tabs=webapi#request-a-callback)
 bypassCustomPluginExecution | `boolean` | `create`, `update`, `upsert`, `delete` | If set to true, the request bypasses custom business logic, all synchronous plug-ins and real-time workflows are disabled. Check for special exceptions in Microsft Docs. [More Info](https://docs.microsoft.com/en-us/powerapps/developer/data-platform/bypass-custom-business-logic)
 collection | `string` | All | Entity Collection name.
 contentId | `string` | `create`, `update`, `upsert`, `deleteRecord` | **BATCH REQUESTS ONLY!** Sets Content-ID header or references request in a Change Set. [More Info](https://www.odata.org/documentation/odata-version-3-0/batch-processing/)
@@ -384,6 +393,7 @@ parameters | `Object` | `callFunction` | Function's input parameters. Example: `
 partitionId | `string` | `create`, `update`, `upsert`, `delete`, `retrieve`, `retrieveMultiple` | Sets a unique partition key value of a logical partition for non-relational custom entity data stored in NoSql tables of Azure heterogenous storage. [More Info](https://docs.microsoft.com/en-us/power-apps/developer/data-platform/webapi/azure-storage-partitioning)
 property | `string` | `uploadFile`, `downloadFile`, `deleteRecord` | `v2.1.6+` **D365 Web API v9.1+.** Use this option to specify the name of the column or of the file attribute in Dynamics 365. [More Info](https://docs.microsoft.com/en-us/powerapps/developer/common-data-service/file-attributes)
 queryParams | `string[]` | All | Custom query parameters. Can also be used to set the [parameter aliases](https://docs.microsoft.com/en-us/power-apps/developer/data-platform/webapi/query-data-web-api#use-parameter-aliases-with-system-query-options) for "$filter" and "$orderBy". **Important!** These parameters ARE NOT URI encoded!
+respondAsync | `boolean` | `callAction` | `v2.3.0+` Specifies that the request should be processed asynchronously. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/background-operations?tabs=webapi).
 returnRepresentation | `boolean` | `create`, `update`, `upsert` | Sets Prefer header request with value "return=representation". Use this property to return just created or updated entity in a single request.
 savedQuery | `string` | `retrieve` | A String representing the GUID value of the saved query.
 select | `string[]` | `retrieve`, `retrieveMultiple`, `retrieveAll`, `update`, `upsert`, `callFunction` | An array (of Strings) representing the $select OData System Query Option to control which attributes will be returned.
@@ -2074,124 +2084,6 @@ optionSetResponse = await dynamicsWebApi.retrieveGlobalOptionSets({
 optionSet = optionSetResponse.value[0]; //first global option set
 ```
 
-## Retrieve CSDL $metadata document
-
-To retrieve a CSDL $metadata document use the following:
-
-```ts
-const request: DynamicsWebApi.CsdlMetadataRequest = {
-    addAnnotations: false; //or true;
-}
-
-//the parameter "request" is optional and can be ommited if additional annotations are not necessary
-const csdlDocument: string = await dynamicsWebApi.retrieveCsdlMetadata(request);
-```
-
-The `csdlDocument` will be the type of `string`. DynamicsWebApi does not parse the contents of the document and it should be done by the developer.
-
-## Formatted Values and Lookup Columns
-
-With DynamicsWebApi it is easier (less code) to access formatted values for the columns as well as the lookup data in response objects. 
-DynamicsWebApi automatically creates aliases for each property that contains a formatted value or lookup data.
-For example:
-
-```ts
-//DynamicsWebApi supports an access to formatted values in both ways
-
-//normally you would access a formatted value for account.donotpostalmail field could as following:
-let doNotPostEmailFormatted = response['donotpostalmail@OData.Community.Display.V1.FormattedValue'];
-
-//with DynamicsWebApi it can be access like this:
-doNotPostEmailFormatted = response.donotpostalmail_Formatted;
-
-//same for lookup data
-//normally
-let customerName = response['_customerid_value@OData.Community.Display.V1.FormattedValue'];
-let customerEntityLogicalName = response['_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname'];
-let customerNavigationProperty = response['_customerid_value@Microsoft.Dynamics.CRM.associatednavigationproperty'];
-
-//with DynamicsWebApi
-customerName = response._customerid_value_Formatted;
-customerEntityLogicalName = response._customerid_value_LogicalName;
-customerNavigationProperty = response._customerid_value_NavigationProperty;
-```
-
-If you still want to use old properties you can do so, they are not removed from the response, so it does not break your existing functionality.
-
-As you have already noticed formatted and lookup data values are accesed by adding a particular suffix to a property name, 
-the following table summarizes it.
-
-OData Annotation | Property Suffix
------------- | -------------
-`@OData.Community.Display.V1.FormattedValue` | `_Formatted`
-`@Microsoft.Dynamics.CRM.lookuplogicalname` | `_LogicalName`
-`@Microsoft.Dynamics.CRM.associatednavigationproperty` | `_NavigationProperty`
-
-## Using Alternate Keys
-You can use alternate keys to Update, Upsert, Retrieve and Delete records. [More Info](https://msdn.microsoft.com/en-us/library/mt607871.aspx#Retrieve%20using%20an%20alternate%20key)
-
-```ts
-const request = {
-    key: "alternateKey='keyValue'",
-    collection: 'leads',
-    select: ['fullname', 'subject']
-};
-
-const record = await dynamicsWebApi.retrieveRequest(request);
-//do something with a record
-```
-## Making requests using Entity Logical Names
-
-It is possible to make requests using Entity Logical Names (for example: `account`, instead of `accounts`).
-There's a small perfomance impact when this feature is used **outside CRM/D365 Web Resources**: DynamicsWebApi makes a request to
-Entity Metadata and retrieves LogicalCollectionName and LogicalName for all entities during **the first call to Web Api** on the page.
-
-To enable this feature set `useEntityNames: true` in DynamicsWebApi config.
-
-```ts
-interface Lead {
-    fullname?: string,
-    subject?: string,
-    leadid?: string
-}
-
-const dynamicsWebApi = new DynamicsWebApi({ useEntityNames: true });
-
-//make request using entity names
-const lead = await dynamicsWebApi.retrieve<Lead>({
-    key: leadId, 
-    collection: "lead", 
-    select: ["fullname", "subject"] 
-});
-```
-
-This feature also applies when you set a navigation property and provide an entity name in the value:
-
-```ts
-const account = {
-    name: "account name",
-   "primarycontactid@odata.bind": "contact(00000000-0000-0000-0000-000000000001)"
-}
-
-const accountid = await dynamicsWebApi.create({
-    collection: "account",
-    data: account
-});
-```
-
-In the example above, entity names will be replaced with collection names: `contact` with `contacts`, `account` with `accounts`.
-This happens, because DynamicsWebApi automatically checks all properties that end with `@odata.bind` or `@odata.id`. 
-Thus, there may be a case when those properties are not used but you still need a collection name instead of an entity name.
-Please use the following method to get a collection name from a cached entity metadata:
-
-```ts
-//IMPORTANT! collectionName will be null if there was no call to Web API prior to that
-//this restriction does not apply if DynamicsWebApi used inside CRM/D365
-const collectionName = dynamicsWebApi.Utility.getCollectionName("account");
-```
-
-Please note, everything said above will happen only if you set `useEntityNames: true` in the DynamicsWebApi config.
-
 ## Work with File Fields
 
 Please make sure that you are connected to Dynamics 365 Web API with version 9.1+ to successfully use the functions. More information can be found [here](https://docs.microsoft.com/en-us/powerapps/developer/common-data-service/file-attributes)
@@ -2431,6 +2323,124 @@ const result = await dynamicsWebApi.autocomplete({
 });
 ```
 
+## Retrieve CSDL $metadata document
+
+To retrieve a CSDL $metadata document use the following:
+
+```ts
+const request: DynamicsWebApi.CsdlMetadataRequest = {
+    addAnnotations: false; //or true;
+}
+
+//the parameter "request" is optional and can be ommited if additional annotations are not necessary
+const csdlDocument: string = await dynamicsWebApi.retrieveCsdlMetadata(request);
+```
+
+The `csdlDocument` will be the type of `string`. DynamicsWebApi does not parse the contents of the document and it should be done by the developer.
+
+## Background Operations
+
+`v2.3.0+`
+
+**Note!** This feature is still in **preview** in the Dataverse (checked: May 4th, 2025). I would also recommend to get familiar with an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/background-operations?tabs=webapi).
+
+_Use background operations to send requests that Dataverse processes asynchronously. Background operations are useful when you don't want to maintain a connection while a request runs._
+
+This feature currently works with **custom api actions only**.
+
+### Request asynchronous processing
+
+```ts
+import { type BackgroundOperationResponse } from "dynamics-web-api";
+
+const response = await dynamicsWebApi.callAction<BackgroundOperationResponse>({
+    actionName: "my_customaction",
+    action: {
+        //custom action properties
+    },
+    // indicating that we want to run this action in a background
+    respondAsync: true,
+});
+
+const location = response.location;
+const backgroundOperationId = response.backgroundOperationId;
+```
+
+### Check the status
+The status of a background operation can be checked in 2 ways: by querying a `backgroundoperations` table or by polling the status monitor resource.
+
+**Note!** Status Monitor is NOT a Dataverse Web API and therefore has a different behavior and is not going to be available in the Power Pages.
+
+For example, if we take a `backgroundOperationId` from a previous example, we can get the status this way:
+
+```ts
+// 1. regular retrieve request
+const backgroundOperation = await dynamicsWebApi.retrieve({
+    collection: "backgroundoperations",
+    key: backgroundOperationId,
+    select: [
+        "name", 
+        "backgroundoperationstatecode", 
+        "backgroundoperationstatuscode", 
+        "outputparameters",
+        "errorcode",
+        "errormessage"
+    ]
+});
+
+// 2. getting the status from the status monitor
+const backgroundOperationStatus = await dynamicsWebApi.getBackgroundOperationStatus(backgroundOperationId);
+```
+
+### Cancel background operation
+
+This can be done in 2 ways as well:
+
+```ts
+await dynamicsWebApi.update({
+    collection: "backgroundoperations",
+    key: backgroundOperationId,
+    data: {
+        backgroundoperationstatecode: 2,
+        backgroundoperationstatuscode: 22
+    }
+});
+
+//or via the status monitor
+
+const backgroundOperationStatus = await dynamicsWebApi.cancelBackgroundOperation(backgroundOperationId);
+```
+
+### Request a callback
+
+It is possible to receive a notification when a background operation is complete by providing a callback URL. The callback URL must point to a self-sufficient SAS webhook service.
+
+```ts
+import { type BackgroundOperationResponse } from "dynamics-web-api";
+
+const response = await dynamicsWebApi.callAction<BackgroundOperationResponse>({
+    actionName: "my_customaction",
+    action: {
+        //custom action properties
+    },
+    respondAsync: true,
+    // providing a callback url
+    backgroundOperationCallbackUrl: "https://webhook.site/<id>"
+});
+
+const location = response.location;
+const backgroundOperationId = response.backgroundOperationId;
+
+// backgroundOperationCallbackUrl can also be set in the default dynamicsWebApi config:
+
+const dynamicsWebApiWithCallback = new DynamicsWebApi({
+    serverUrl: "<server URL>",
+    backgroundOperationCallbackUrl: "https://webhook.site/<id>"
+});
+```
+
+In the latter case, the `backgroundOperationCallbackUrl` can be omitted from the requests, but `responseAsync` must still be set for the config value to be passed to a request.
+
 ## Abort Request
 If necessary, it is possible to abort a DynamicsWebApi request via the `AbortController` object. Request cancellation works in Browsers and Node.js v15.0.0+.
 
@@ -2461,6 +2471,109 @@ catch(error){
     }
 }
 ```
+
+## Formatted Values and Lookup Columns
+
+With DynamicsWebApi it is easier (less code) to access formatted values for the columns as well as the lookup data in response objects. 
+DynamicsWebApi automatically creates aliases for each property that contains a formatted value or lookup data.
+For example:
+
+```ts
+//DynamicsWebApi supports an access to formatted values in both ways
+
+//normally you would access a formatted value for account.donotpostalmail field could as following:
+let doNotPostEmailFormatted = response['donotpostalmail@OData.Community.Display.V1.FormattedValue'];
+
+//with DynamicsWebApi it can be access like this:
+doNotPostEmailFormatted = response.donotpostalmail_Formatted;
+
+//same for lookup data
+//normally
+let customerName = response['_customerid_value@OData.Community.Display.V1.FormattedValue'];
+let customerEntityLogicalName = response['_customerid_value@Microsoft.Dynamics.CRM.lookuplogicalname'];
+let customerNavigationProperty = response['_customerid_value@Microsoft.Dynamics.CRM.associatednavigationproperty'];
+
+//with DynamicsWebApi
+customerName = response._customerid_value_Formatted;
+customerEntityLogicalName = response._customerid_value_LogicalName;
+customerNavigationProperty = response._customerid_value_NavigationProperty;
+```
+
+If you still want to use old properties you can do so, they are not removed from the response, so it does not break your existing functionality.
+
+As you have already noticed formatted and lookup data values are accesed by adding a particular suffix to a property name, 
+the following table summarizes it.
+
+OData Annotation | Property Suffix
+------------ | -------------
+`@OData.Community.Display.V1.FormattedValue` | `_Formatted`
+`@Microsoft.Dynamics.CRM.lookuplogicalname` | `_LogicalName`
+`@Microsoft.Dynamics.CRM.associatednavigationproperty` | `_NavigationProperty`
+
+## Using Alternate Keys
+You can use alternate keys to Update, Upsert, Retrieve and Delete records. [More Info](https://msdn.microsoft.com/en-us/library/mt607871.aspx#Retrieve%20using%20an%20alternate%20key)
+
+```ts
+const request = {
+    key: "alternateKey='keyValue'",
+    collection: 'leads',
+    select: ['fullname', 'subject']
+};
+
+const record = await dynamicsWebApi.retrieveRequest(request);
+//do something with a record
+```
+## Making requests using Entity Logical Names
+
+It is possible to make requests using Entity Logical Names (for example: `account`, instead of `accounts`).
+There's a small perfomance impact when this feature is used **outside CRM/D365 Web Resources**: DynamicsWebApi makes a request to
+Entity Metadata and retrieves LogicalCollectionName and LogicalName for all entities during **the first call to Web Api** on the page.
+
+To enable this feature set `useEntityNames: true` in DynamicsWebApi config.
+
+```ts
+interface Lead {
+    fullname?: string,
+    subject?: string,
+    leadid?: string
+}
+
+const dynamicsWebApi = new DynamicsWebApi({ useEntityNames: true });
+
+//make request using entity names
+const lead = await dynamicsWebApi.retrieve<Lead>({
+    key: leadId, 
+    collection: "lead", 
+    select: ["fullname", "subject"] 
+});
+```
+
+This feature also applies when you set a navigation property and provide an entity name in the value:
+
+```ts
+const account = {
+    name: "account name",
+   "primarycontactid@odata.bind": "contact(00000000-0000-0000-0000-000000000001)"
+}
+
+const accountid = await dynamicsWebApi.create({
+    collection: "account",
+    data: account
+});
+```
+
+In the example above, entity names will be replaced with collection names: `contact` with `contacts`, `account` with `accounts`.
+This happens, because DynamicsWebApi automatically checks all properties that end with `@odata.bind` or `@odata.id`. 
+Thus, there may be a case when those properties are not used but you still need a collection name instead of an entity name.
+Please use the following method to get a collection name from a cached entity metadata:
+
+```ts
+//IMPORTANT! collectionName will be null if there was no call to Web API prior to that
+//this restriction does not apply if DynamicsWebApi used inside CRM/D365
+const collectionName = dynamicsWebApi.Utility.getCollectionName("account");
+```
+
+Please note, everything said above will happen only if you set `useEntityNames: true` in the DynamicsWebApi config.
 
 ## Using Proxy
 

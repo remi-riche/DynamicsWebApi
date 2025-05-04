@@ -144,6 +144,11 @@ export interface InternalRequest {
     /**A callback URL when the background operation is completed. */
     backgroundOperationCallbackUrl?: string | null;
     respondAsync?: boolean;
+    /**
+     * Default: true. Indicates if the default Dataverse headers need to be included with a request.
+     * In some cases, the default headers are not needed (e.g. when using a custom API).
+     */
+    includeDefaultDataverseHeaders?: boolean;
 }
 
 export interface FileParseResult {

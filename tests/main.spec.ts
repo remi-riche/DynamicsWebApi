@@ -412,7 +412,7 @@ describe("dynamicsWebApi.retrieveMultiple -", () => {
                     code: "ABORT_ERR",
                     name: "AbortError",
                     message: "The operation was aborted",
-                })
+                }),
             );
 
             setTimeout(() => controller.abort(), 1);
@@ -1136,6 +1136,64 @@ describe("dynamicsWebApi.callFunction -", () => {
                 });
 
                 expect(object).to.deep.equal(mocks.data.testEntity);
+            } catch (error) {
+                throw error;
+            }
+        });
+
+        it("all requests have been made", function () {
+            expect(scope.isDone()).to.be.true;
+        });
+    });
+});
+
+describe("dynamicsWebApi.getBackgroundOperationStatus -", () => {
+    describe("backgroundOperationId", () => {
+        let scope: nock.Scope;
+        before(function () {
+            const response = mocks.responses.backgroundOperationStatusResponse;
+            scope = nock(mocks.serviceApiUrl)
+                .get(`/backgroundoperation/${mocks.data.testEntityId}`)
+                .reply(response.status, response.responseText, response.responseHeaders);
+        });
+
+        after(function () {
+            nock.cleanAll();
+        });
+
+        it("returns a correct response", async () => {
+            try {
+                const object = await dynamicsWebApiTest.getBackgroundOperationStatus(mocks.data.testEntityId);
+
+                expect(object).to.deep.equal(mocks.data.backgroundOperationStatus);
+            } catch (error) {
+                throw error;
+            }
+        });
+
+        it("all requests have been made", function () {
+            expect(scope.isDone()).to.be.true;
+        });
+    });
+
+    describe("cancelBackgroundOperation", () => {
+        let scope: nock.Scope;
+        before(function () {
+            const response = mocks.responses.backgroundOperationStatusResponse;
+            scope = nock(mocks.serviceApiUrl)
+                .delete(`/backgroundoperation/${mocks.data.testEntityId}`)
+                .reply(response.status, response.responseText, response.responseHeaders);
+        });
+
+        after(function () {
+            nock.cleanAll();
+        });
+
+        it("returns a correct response", async () => {
+            try {
+                const object = await dynamicsWebApiTest.cancelBackgroundOperation(mocks.data.testEntityId);
+
+                expect(object).to.deep.equal(mocks.data.backgroundOperationStatus);
             } catch (error) {
                 throw error;
             }
