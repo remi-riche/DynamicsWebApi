@@ -170,12 +170,15 @@ function handleEmptyResponse(responseHeaders: Record<string, string>, parseParam
     if (entityUrl) {
         return extractUuidFromUrl(entityUrl) ?? undefined;
     }
-    //checking if the response is a chunk response
+    //checking if the response has a location header
     const location = getHeader(responseHeaders, "Location");
     if (location) {
-        const result: { location: string; chunkSize?: number } = { location: location };
+        const result: { location: string; chunkSize?: number; backgroundOperationId?: string } = { location: location };
         if (responseHeaders["x-ms-chunk-size"]) {
             result.chunkSize = parseInt(responseHeaders["x-ms-chunk-size"]);
+        }
+        if (responseHeaders["x-ms-dyn-backgroundoperationid"]) {
+            result.backgroundOperationId = responseHeaders["x-ms-dyn-backgroundoperationid"];
         }
         return result;
     }

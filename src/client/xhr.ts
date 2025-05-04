@@ -12,7 +12,7 @@ export function executeRequest(options: Core.RequestOptions): Promise<Core.WebAp
 function _executeRequest(
     options: Core.RequestOptions,
     successCallback: (response: Core.WebApiResponse) => void,
-    errorCallback: (error: Core.WebApiErrorResponse | Core.WebApiErrorResponse[]) => void
+    errorCallback: (error: Core.WebApiErrorResponse | Core.WebApiErrorResponse[]) => void,
 ) {
     const data = options.data;
     const headers = options.headers;
@@ -25,7 +25,7 @@ function _executeRequest(
                 name: "AbortError",
                 code: 20,
                 message: "The user aborted a request.",
-            })
+            }),
         );
 
         return;
@@ -43,64 +43,53 @@ function _executeRequest(
         if (request.readyState === 4) {
             if (signal) signal.removeEventListener("abort", abort);
 
-            switch (request.status) {
-                case 200: // Success with content returned in response body.
-                case 201: // Success with content returned in response body.
-                case 204: // Success with no content returned in response body.
-                case 206: // Success with partial content.
-                case 304: {
-                    // Success with Not Modified
-                    const responseHeaders = parseResponseHeaders(request.getAllResponseHeaders());
-                    const responseData = parseResponse(request.responseText, responseHeaders, responseParams[options.requestId]);
+            if (!request || request.status === 0) return; // response was handled elsewhere or will be handled by onerror
 
-                    const response = {
-                        data: responseData,
-                        headers: responseHeaders,
-                        status: request.status,
-                    };
+            if ((request.status >= 200 && request.status < 300) || request.status === 304) {
+                // Success with Not Modified
+                const responseHeaders = parseResponseHeaders(request.getAllResponseHeaders());
+                const responseData = parseResponse(request.responseText, responseHeaders, responseParams[options.requestId]);
 
-                    request = null as any;
+                const response = {
+                    data: responseData,
+                    headers: responseHeaders,
+                    status: request.status,
+                };
 
-                    successCallback(response);
-                    break;
-                }
-                case 0:
-                    break; //response will be handled by onerror
-                default:
-                    if (!request) break; //response was handled somewhere else
+                request = null as any;
 
-                    // All other statuses are error cases.
-                    let error;
-                    let headers;
-                    try {
-                        headers = parseResponseHeaders(request.getAllResponseHeaders());
-                        const errorParsed = parseResponse(request.responseText, headers, responseParams[options.requestId]);
+                successCallback(response);
+            } else {
+                // All other statuses are error cases.
+                let error;
+                let headers;
+                try {
+                    headers = parseResponseHeaders(request.getAllResponseHeaders());
+                    const errorParsed = parseResponse(request.responseText, headers, responseParams[options.requestId]);
 
-                        if (Array.isArray(errorParsed)) {
-                            errorCallback(errorParsed);
-                            break;
-                        }
-
-                        error = errorParsed.error;
-                    } catch (e) {
-                        if (request.response.length > 0) {
-                            error = { message: request.response };
-                        } else {
-                            error = { message: "Unexpected Error" };
-                        }
+                    if (Array.isArray(errorParsed)) {
+                        errorCallback(errorParsed);
+                        return;
                     }
 
-                    const errorParameters = {
-                        status: request.status,
-                        statusText: request.statusText,
-                        headers: headers,
-                    };
+                    error = errorParsed.error;
+                } catch (e) {
+                    if (request.response.length > 0) {
+                        error = { message: request.response };
+                    } else {
+                        error = { message: "Unexpected Error" };
+                    }
+                }
 
-                    request = null as any;
+                const errorParameters = {
+                    status: request.status,
+                    statusText: request.statusText,
+                    headers: headers,
+                };
 
-                    errorCallback(ErrorHelper.handleHttpError(error, errorParameters));
+                request = null as any;
 
-                    break;
+                errorCallback(ErrorHelper.handleHttpError(error, errorParameters));
             }
         }
     };
@@ -117,7 +106,7 @@ function _executeRequest(
                 statusText: request.statusText,
                 message: request.responseText || "Network Error",
                 headers: headers,
-            })
+            }),
         );
         request = null as any;
     };
@@ -131,7 +120,7 @@ function _executeRequest(
                 statusText: request.statusText,
                 message: request.responseText || "Request Timed Out",
                 headers: headers,
-            })
+            }),
         );
         request = null as any;
     };
@@ -147,7 +136,7 @@ function _executeRequest(
                 statusText: request.statusText,
                 message: "Request aborted",
                 headers: headers,
-            })
+            }),
         );
         request = null as any;
     };
@@ -166,7 +155,7 @@ function _executeRequest(
                 statusText: request.statusText,
                 message: "The user aborted a request.",
                 headers: headers,
-            })
+            }),
         );
 
         request.abort();

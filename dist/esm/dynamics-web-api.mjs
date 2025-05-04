@@ -685,6 +685,9 @@ function handleEmptyResponse(responseHeaders, parseParams) {
     if (responseHeaders["x-ms-chunk-size"]) {
       result.chunkSize = parseInt(responseHeaders["x-ms-chunk-size"]);
     }
+    if (responseHeaders["x-ms-dyn-backgroundoperationid"]) {
+      result.backgroundOperationId = responseHeaders["x-ms-dyn-backgroundoperationid"];
+    }
     return result;
   }
 }
@@ -772,50 +775,38 @@ function _executeRequest(options, successCallback, errorCallback) {
       rawData += chunk;
     });
     res.on("end", function() {
-      switch (res.statusCode) {
-        case 200:
-        // Success with content returned in response body.
-        case 201:
-        // Success with content returned in response body.
-        case 204:
-        // Success with no content returned in response body.
-        case 206:
-        //Success with partial content
-        case 304: {
-          let responseData = parseResponse(rawData, res.headers, responseParams[options.requestId]);
-          let response = {
-            data: responseData,
-            headers: res.headers,
-            status: res.statusCode
-          };
-          successCallback(response);
-          break;
-        }
-        default:
-          let crmError;
-          try {
-            var errorParsed = parseResponse(rawData, res.headers, responseParams[options.requestId]);
-            if (Array.isArray(errorParsed)) {
-              errorCallback(errorParsed);
-              break;
-            }
-            crmError = errorParsed.hasOwnProperty("error") && errorParsed.error ? errorParsed.error : { message: errorParsed.Message };
-          } catch (e) {
-            if (rawData.length > 0) {
-              crmError = { message: rawData };
-            } else {
-              crmError = { message: "Unexpected Error" };
-            }
+      if (res.statusCode && (res.statusCode >= 200 && res.statusCode < 300 || res.statusCode === 304)) {
+        let responseData = parseResponse(rawData, res.headers, responseParams[options.requestId]);
+        let response = {
+          data: responseData,
+          headers: res.headers,
+          status: res.statusCode
+        };
+        successCallback(response);
+      } else {
+        let crmError;
+        try {
+          var errorParsed = parseResponse(rawData, res.headers, responseParams[options.requestId]);
+          if (Array.isArray(errorParsed)) {
+            errorCallback(errorParsed);
+            return;
           }
-          errorCallback(
-            ErrorHelper.handleHttpError(crmError, {
-              status: res.statusCode,
-              statusText: "",
-              statusMessage: res.statusMessage,
-              headers: res.headers
-            })
-          );
-          break;
+          crmError = errorParsed.hasOwnProperty("error") && errorParsed.error ? errorParsed.error : { message: errorParsed.Message };
+        } catch (e) {
+          if (rawData.length > 0) {
+            crmError = { message: rawData };
+          } else {
+            crmError = { message: "Unexpected Error" };
+          }
+        }
+        errorCallback(
+          ErrorHelper.handleHttpError(crmError, {
+            status: res.statusCode,
+            statusText: "",
+            statusMessage: res.statusMessage,
+            headers: res.headers
+          })
+        );
       }
     });
   });

@@ -1147,6 +1147,81 @@ describe("dynamicsWebApi.callFunction -", () => {
     });
 });
 
+describe("dynamicsWebApi.callAction -", function () {
+    describe("respond-async", function () {
+        let scope: nock.Scope;
+        before(function () {
+            const response = mocks.responses.backgroundOperationResponse;
+            scope = nock(mocks.webApiUrl, {
+                reqheaders: {
+                    Prefer: "respond-async",
+                },
+            })
+                .post("/FUN", mocks.responses.actionRequestModified)
+                .reply(response.status, undefined, response.responseHeaders);
+        });
+
+        after(function () {
+            nock.cleanAll();
+        });
+
+        it("returns a correct response", async () => {
+            try {
+                const object = await dynamicsWebApiTest.callAction({
+                    actionName: "FUN",
+                    action: mocks.responses.actionRequest,
+                    respondAsync: true,
+                });
+
+                expect(object).to.deep.equal(mocks.data.newBackgroundOperation);
+            } catch (error) {
+                throw error;
+            }
+        });
+
+        it("all requests have been made", function () {
+            expect(scope.isDone()).to.be.true;
+        });
+    });
+
+    describe("respond-async with a callback", function () {
+        let scope: nock.Scope;
+        before(function () {
+            const response = mocks.responses.backgroundOperationResponse;
+            scope = nock(mocks.webApiUrl, {
+                reqheaders: {
+                    Prefer: 'respond-async,odata.callback;url="https://webhook.site/id"',
+                },
+            })
+                .post("/FUN", mocks.responses.actionRequestModified)
+                .reply(response.status, mocks.data.newBackgroundOperation, response.responseHeaders);
+        });
+
+        after(function () {
+            nock.cleanAll();
+        });
+
+        it("returns a correct response", async () => {
+            try {
+                const object = await dynamicsWebApiTest.callAction({
+                    actionName: "FUN",
+                    action: mocks.responses.actionRequest,
+                    respondAsync: true,
+                    backgroundOperationCallbackUrl: "https://webhook.site/id",
+                });
+
+                expect(object).to.deep.equal(mocks.data.newBackgroundOperation);
+            } catch (error) {
+                throw error;
+            }
+        });
+
+        it("all requests have been made", function () {
+            expect(scope.isDone()).to.be.true;
+        });
+    });
+});
+
 describe("dynamicsWebApi.getBackgroundOperationStatus -", () => {
     describe("backgroundOperationId", () => {
         let scope: nock.Scope;

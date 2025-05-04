@@ -668,6 +668,9 @@ function handleEmptyResponse(responseHeaders, parseParams) {
     if (responseHeaders["x-ms-chunk-size"]) {
       result.chunkSize = parseInt(responseHeaders["x-ms-chunk-size"]);
     }
+    if (responseHeaders["x-ms-dyn-backgroundoperationid"]) {
+      result.backgroundOperationId = responseHeaders["x-ms-dyn-backgroundoperationid"];
+    }
     return result;
   }
 }
@@ -753,57 +756,42 @@ function _executeRequest(options, successCallback, errorCallback) {
   request.onreadystatechange = function() {
     if (request.readyState === 4) {
       if (signal) signal.removeEventListener("abort", abort);
-      switch (request.status) {
-        case 200:
-        // Success with content returned in response body.
-        case 201:
-        // Success with content returned in response body.
-        case 204:
-        // Success with no content returned in response body.
-        case 206:
-        // Success with partial content.
-        case 304: {
-          const responseHeaders = parseResponseHeaders(request.getAllResponseHeaders());
-          const responseData = parseResponse(request.responseText, responseHeaders, responseParams[options.requestId]);
-          const response = {
-            data: responseData,
-            headers: responseHeaders,
-            status: request.status
-          };
-          request = null;
-          successCallback(response);
-          break;
-        }
-        case 0:
-          break;
-        //response will be handled by onerror
-        default:
-          if (!request) break;
-          let error;
-          let headers2;
-          try {
-            headers2 = parseResponseHeaders(request.getAllResponseHeaders());
-            const errorParsed = parseResponse(request.responseText, headers2, responseParams[options.requestId]);
-            if (Array.isArray(errorParsed)) {
-              errorCallback(errorParsed);
-              break;
-            }
-            error = errorParsed.error;
-          } catch (e) {
-            if (request.response.length > 0) {
-              error = { message: request.response };
-            } else {
-              error = { message: "Unexpected Error" };
-            }
+      if (!request || request.status === 0) return;
+      if (request.status >= 200 && request.status < 300 || request.status === 304) {
+        const responseHeaders = parseResponseHeaders(request.getAllResponseHeaders());
+        const responseData = parseResponse(request.responseText, responseHeaders, responseParams[options.requestId]);
+        const response = {
+          data: responseData,
+          headers: responseHeaders,
+          status: request.status
+        };
+        request = null;
+        successCallback(response);
+      } else {
+        let error;
+        let headers2;
+        try {
+          headers2 = parseResponseHeaders(request.getAllResponseHeaders());
+          const errorParsed = parseResponse(request.responseText, headers2, responseParams[options.requestId]);
+          if (Array.isArray(errorParsed)) {
+            errorCallback(errorParsed);
+            return;
           }
-          const errorParameters = {
-            status: request.status,
-            statusText: request.statusText,
-            headers: headers2
-          };
-          request = null;
-          errorCallback(ErrorHelper.handleHttpError(error, errorParameters));
-          break;
+          error = errorParsed.error;
+        } catch (e) {
+          if (request.response.length > 0) {
+            error = { message: request.response };
+          } else {
+            error = { message: "Unexpected Error" };
+          }
+        }
+        const errorParameters = {
+          status: request.status,
+          statusText: request.statusText,
+          headers: headers2
+        };
+        request = null;
+        errorCallback(ErrorHelper.handleHttpError(error, errorParameters));
       }
     }
   };

@@ -1,6 +1,6 @@
 ﻿//<cookie pagenumber="2" pagingcookie="<cookie page="1"><accountid last="{EF72AE29-B3DE-E611-8102-5065F38A7BF1}" first="{475B158C-541C-E511-80D3-3863BB347BA8}" /></cookie>" istracking="False" />
 
-import { AutocompleteResponse, BackgroundOperationStatusResponse, QueryResponse, SuggestResponse } from "../src/dynamics-web-api";
+import { AutocompleteResponse, BackgroundOperationResponse, BackgroundOperationStatusResponse, QueryResponse, SuggestResponse } from "../src/dynamics-web-api";
 
 //<cookie pagenumber="2" pagingcookie="<cookie page="2"><accountid last="{F972AE29-B3DE-E611-8102-5065F38A7BF1}" first="{F172AE29-B3DE-E611-8102-5065F38A7BF1}" /></cookie>" istracking="False" />
 const serverUrl = "http://testorg.crm.dynamics.com";
@@ -267,6 +267,10 @@ const dataStubs = {
         backgroundOperationStatusCode: 1,
         testOutputParam: "testOutputParam",
     } as BackgroundOperationStatusResponse,
+    newBackgroundOperation: {
+        backgroundOperationId: "00000000-0000-0000-0000-000000000001",
+        location: serviceApiUrl + "backgroundoperation/00000000-0000-0000-0000-000000000001",
+    } as BackgroundOperationResponse,
     batch:
         "--dwa_batch_XXX\r\n" +
         "Content-Type: application/http\r\n" +
@@ -1362,6 +1366,14 @@ const responseStubs = {
             error: { message: "message" },
         }),
         responseHeaders: dataStubs.defaultResponseHeaders,
+    },
+    backgroundOperationResponse: {
+        status: 202,
+        responseHeaders: {
+            Location: `${serviceApiUrl}backgroundoperation/${dataStubs.testEntityId}`,
+            "x-ms-dyn-backgroundoperationid": dataStubs.testEntityId,
+            "Preference-Applied": "respond-async",
+        },
     },
     backgroundOperationStatusResponse: {
         status: 200,

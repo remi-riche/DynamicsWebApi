@@ -54,7 +54,7 @@ export function executeRequest(options: Core.RequestOptions): Promise<Core.WebAp
 function _executeRequest(
     options: Core.RequestOptions,
     successCallback: (response: Core.WebApiResponse) => void,
-    errorCallback: (error: Core.WebApiErrorResponse | Core.WebApiErrorResponse[]) => void
+    errorCallback: (error: Core.WebApiErrorResponse | Core.WebApiErrorResponse[]) => void,
 ) {
     const data = options.data;
     const headers = options.headers;
@@ -109,53 +109,45 @@ function _executeRequest(
             rawData += chunk;
         });
         res.on("end", function () {
-            switch (res.statusCode) {
-                case 200: // Success with content returned in response body.
-                case 201: // Success with content returned in response body.
-                case 204: // Success with no content returned in response body.
-                case 206: //Success with partial content
-                case 304: {
-                    // Success with Not Modified
-                    let responseData = parseResponse(rawData, res.headers as Record<string, string>, responseParams[options.requestId]);
+            if (res.statusCode && ((res.statusCode >= 200 && res.statusCode < 300) || res.statusCode === 304)) {
+                // Success with Not Modified
+                let responseData = parseResponse(rawData, res.headers as Record<string, string>, responseParams[options.requestId]);
 
-                    let response = {
-                        data: responseData,
-                        headers: res.headers as any,
-                        status: res.statusCode,
-                    };
+                let response = {
+                    data: responseData,
+                    headers: res.headers as any,
+                    status: res.statusCode,
+                };
 
-                    successCallback(response);
-                    break;
-                }
-                default:
-                    // All other statuses are error cases.
-                    let crmError;
-                    try {
-                        var errorParsed = parseResponse(rawData, res.headers as Record<string, string>, responseParams[options.requestId]);
+                successCallback(response);
+            } else {
+                // All other statuses are error cases.
+                let crmError;
+                try {
+                    var errorParsed = parseResponse(rawData, res.headers as Record<string, string>, responseParams[options.requestId]);
 
-                        if (Array.isArray(errorParsed)) {
-                            errorCallback(errorParsed);
-                            break;
-                        }
-
-                        crmError = errorParsed.hasOwnProperty("error") && errorParsed.error ? errorParsed.error : { message: errorParsed.Message };
-                    } catch (e) {
-                        if (rawData.length > 0) {
-                            crmError = { message: rawData };
-                        } else {
-                            crmError = { message: "Unexpected Error" };
-                        }
+                    if (Array.isArray(errorParsed)) {
+                        errorCallback(errorParsed);
+                        return;
                     }
 
-                    errorCallback(
-                        ErrorHelper.handleHttpError(crmError, {
-                            status: res.statusCode,
-                            statusText: "",
-                            statusMessage: res.statusMessage,
-                            headers: res.headers,
-                        })
-                    );
-                    break;
+                    crmError = errorParsed.hasOwnProperty("error") && errorParsed.error ? errorParsed.error : { message: errorParsed.Message };
+                } catch (e) {
+                    if (rawData.length > 0) {
+                        crmError = { message: rawData };
+                    } else {
+                        crmError = { message: "Unexpected Error" };
+                    }
+                }
+
+                errorCallback(
+                    ErrorHelper.handleHttpError(crmError, {
+                        status: res.statusCode,
+                        statusText: "",
+                        statusMessage: res.statusMessage,
+                        headers: res.headers,
+                    }),
+                );
             }
         });
     });
