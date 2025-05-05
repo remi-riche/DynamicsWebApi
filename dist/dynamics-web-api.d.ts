@@ -450,15 +450,9 @@ export interface BaseRequest {
      * Important! These parameters ARE NOT URI encoded! */
     queryParams?: string[];
     /**
-     * A callback URL when the background operation is completed.
-     * Dataverse uses this URL to send a POST request.
+     * Use this parameter to include a shared variable value that is accessible within a plug-in.
      */
-    backgroundOperationCallbackUrl?: string;
-    /**
-     * Use background operations to send requests that Dataverse processes asynchronously.
-     * Background operations are useful when you don't want to maintain a connection while a request runs.
-     */
-    respondAsync?: boolean;
+    tag?: string;
 }
 export interface BatchRequest extends BaseRequest {
     /** Sets Prefer header to "odata.continue-on-error" that allows more requests be processed when errors occur. The batch request will return '200 OK' and individual response errors will be returned in the batch response body. */
@@ -702,6 +696,16 @@ export interface UnboundActionRequest<TAction = any> extends BaseRequest {
     actionName: string;
     /**An object that represents a Dynamics 365 action. */
     action?: TAction;
+    /**
+     * A callback URL when the background operation is completed.
+     * Dataverse uses this URL to send a POST request.
+     */
+    backgroundOperationCallbackUrl?: string;
+    /**
+     * Use background operations to send requests that Dataverse processes asynchronously.
+     * Background operations are useful when you don't want to maintain a connection while a request runs.
+     */
+    respondAsync?: boolean;
 }
 export interface BoundActionRequest<TAction = any> extends UnboundActionRequest<TAction>, Request {
     /**A String representing the GUID value for the record. */

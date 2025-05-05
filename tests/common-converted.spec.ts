@@ -986,6 +986,16 @@ describe("RequestUtility.composeUrl -", function () {
         expect(result).to.deep.equal(stubUrl + "?partitionid='partition1'");
     });
 
+    it("tag", function () {
+        var dwaRequest = {
+            tag: "A string value",
+            functionName: "",
+        };
+
+        var result = composeUrl(dwaRequest, null, stubUrl);
+        expect(result).to.deep.equal(stubUrl + "?tag=" + encodeURIComponent("A string value"));
+    });
+
     it("queryParams", function () {
         var dwaRequest = {
             filter: "something eq 2",

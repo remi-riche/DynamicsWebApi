@@ -14,13 +14,14 @@ As well as Microsoft Dynamics 365 CE (online), Microsoft Dynamics 365 CE (on-pre
 
 - **Microsoft Dataverse Search API**. Access the full power of its Search, Suggestion and Autocomplete capabilities.
 - **Batch Requests**. Convert all requests into a Batch operation with two lines of code.
-- **Simplicity and Automation**. Such as automated paging, big file downloading/uploading in chunks of data, automated conversion of requests with long URLs into a Batch Request in the background and more!
+- **Simplicity and Automation**. Automated paging, big file downloading/uploading in chunks of data, automated conversion of requests with long URLs into a Batch Request and more!
 - **CRUD operations**. Including Fetch XML, Actions and Functions in Microsoft Dataverse Web API.
 - **Table Definitions (Entity Metadata)**. Query and modify Table, Column, Choice (Option Set) and Relationship definitions.
 - **File Fields**. Upload, Download and Delete data stored in the File Fields.
 - **Abort Signal and Abort Controller** (Browser and Node.js 15+). Abort requests when they are no longer need to be completed.
 - **Node.js and a Browser** support.
 - **Proxy Configuration** support.
+- **Background Operations** support.
 - Works with **Microsoft Power Pages** (aka Microsoft Portal). `v2.1.0+`
 
 Browser-compiled script and type definitions can be found in a v2 [dist](https://github.com/AleksandrRogov/DynamicsWebApi/tree/v2/dist) folder.
@@ -61,7 +62,7 @@ Once the web file is uploaded, it can be included in a template, a page or a for
 
 With CDN, it is a bit easier: no need to create and upload a web file - just include the script in your template, page or a form:
 ```html
-<script type="text/javascript" src="https://unpkg.com/dynamics-web-api@2.1.4/dist/dynamics-web-api.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/dynamics-web-api@2.3.0/dist/dynamics-web-api.min.js"></script>
 ```
 
 And you are good to go! DynamicsWebApi will automatically detect if the library is running on Power Pages and will supply an anti-forgery token with each request.

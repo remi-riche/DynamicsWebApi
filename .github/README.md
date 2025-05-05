@@ -398,6 +398,7 @@ returnRepresentation | `boolean` | `create`, `update`, `upsert` | Sets Prefer he
 savedQuery | `string` | `retrieve` | A String representing the GUID value of the saved query.
 select | `string[]` | `retrieve`, `retrieveMultiple`, `retrieveAll`, `update`, `upsert`, `callFunction` | An array (of Strings) representing the $select OData System Query Option to control which attributes will be returned.
 signal | `AbortSignal` | All | Specifies an `AbortSignal` that can be used to abort a request if required via an `AbortController` object. [More Info](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
+tag | `string` | All | `v2.3.0+` Use the tag parameter to include a shared variable value that is accessible within a plug-in.
 timeout | `number` | All | Sets a number of milliseconds before a request times out.
 token | `string` | All | Authorization Token. If set, onTokenRefresh will not be called.
 top | `number` | `retrieveMultiple`, `retrieveAll` | Limit the number of results returned by using the $top system query option. Do not use $top with $count!

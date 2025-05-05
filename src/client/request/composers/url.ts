@@ -114,6 +114,11 @@ export const composeUrl = (request: InternalRequest | null, config: Config | nul
             queryArray.push("size=" + request.downloadSize);
         }
 
+        if (request.tag) {
+            ErrorHelper.stringParameterCheck(request.tag, `DynamicsWebApi.${request.functionName}`, "request.tag");
+            queryArray.push("tag=" + encodeURIComponent(request.tag));
+        }
+
         if (request.queryParams?.length) {
             ErrorHelper.arrayParameterCheck(request.queryParams, `DynamicsWebApi.${request.functionName}`, "request.queryParams");
             queryArray.push(request.queryParams.join("&"));

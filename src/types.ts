@@ -149,6 +149,10 @@ export interface InternalRequest {
      * In some cases, the default headers are not needed (e.g. when using a custom API).
      */
     includeDefaultDataverseHeaders?: boolean;
+    /**
+     * Use this parameter to include a shared variable value that is accessible within a plug-in.
+     */
+    tag?: string;
 }
 
 export interface FileParseResult {
