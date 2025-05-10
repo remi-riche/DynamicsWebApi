@@ -21,7 +21,7 @@ As well as Microsoft Dynamics 365 CE (online), Microsoft Dynamics 365 CE (on-pre
 - **Abort Signal and Abort Controller** (Browser and Node.js 15+). Abort requests when they are no longer need to be completed.
 - **Node.js and a Browser** support.
 - **Proxy Configuration** support.
-- **Background Operations** support.
+- **Background Operations** support. `v2.3.0+`
 - Works with **Microsoft Power Pages** (aka Microsoft Portal). `v2.1.0+`
 
 Browser-compiled script and type definitions can be found in a v2 [dist](https://github.com/AleksandrRogov/DynamicsWebApi/tree/v2/dist) folder.

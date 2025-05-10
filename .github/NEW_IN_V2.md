@@ -4,6 +4,7 @@ DynamicsWebApi v2 has been fully rewritten in TypeScript. The process of rewriti
 
 ### Microsoft Dataverse Search API
 v2 brings the power of Search, Suggest and Autocomplete capabilities of Microsoft Dataverse Search API.
+`v2.3+` brings support for Dataverse Search API v2.0.
 
 ### `AbortController` and `AbortSignal` support (for Node.js 15+ and Browser)
 Each request can now be aborted when it's no longer need to be completed via the `AbortController`.
@@ -19,6 +20,9 @@ Retrieve the org's CSDL $metadata document with a single call of `retrieveCsdlMe
 
 ### `v2.1+` Microsoft Power Pages Support
 DynamicsWebApi now can be used in Micorosoft Power Pages website.
+
+### `v2.3+` Background Operations Support
+DynamicsWebApi supports enabling of background operations for custom actions.
 
 ### NPM Package contents
 NPM package now includes a pre-bundled code of DynamicsWebApi to simplify a compilation process of the projects that depend on it. There are 4 separate bundles: 

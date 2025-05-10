@@ -2509,8 +2509,13 @@ ${processData(internalRequest.data, config)}`);
     if (query2.entities?.length) {
       query2.entities = convertEntitiesProperty(query2.entities, config?.version);
     }
-    if (functionName === "query") {
-      convertQuery(query2, config?.version);
+    switch (functionName) {
+      case "query":
+        convertQuery(query2, config?.version);
+        break;
+      default:
+        convertSuggestOrAutocompleteQuery(query2, config?.version);
+        break;
     }
     return query2;
   }
@@ -2550,18 +2555,27 @@ ${processData(internalRequest.data, config)}`);
       if (query3.options) {
         if (typeof query3.options === "string") {
           try {
-            query3.options = JSON.parse(query3.options);
+            query3.options = JSON.parse(query3.options, searchOptionsReviver);
           } catch {
             throw new Error("The 'query.options' property must be a valid JSON string.");
           }
         }
         if (!query3.searchMode) {
-          query3.searchMode = query3.options.searchmode;
+          query3.searchMode = query3.options.searchMode;
         }
         if (!query3.searchType) {
-          query3.searchType = query3.options.querytype === "lucene" ? "full" : query3.options.querytype;
+          query3.searchType = query3.options.queryType === "lucene" ? "full" : query3.options.queryType;
         }
         delete query3.options;
+      }
+      for (const prop of specialProperties) {
+        if (query3[prop] && typeof query3[prop] === "string") {
+          try {
+            query3[prop] = JSON.parse(query3[prop]);
+          } catch {
+            throw new Error(`The 'query.${prop}' property must be a valid JSON string.`);
+          }
+        }
       }
     };
     const toV2 = (query3) => {
@@ -2574,22 +2588,83 @@ ${processData(internalRequest.data, config)}`);
       if (query3.searchMode || query3.searchType) {
         if (typeof query3.options !== "string") {
           if (!query3.options) query3.options = {};
-          if (!query3.options.searchmode) {
-            query3.options.searchmode = query3.searchMode;
+          if (!query3.options.searchMode) {
+            query3.options.searchMode = query3.searchMode;
           }
-          if (!query3.options.querytype) {
-            query3.options.querytype = query3.searchType === "full" ? "lucene" : query3.searchType;
+          if (!query3.options.queryType) {
+            query3.options.queryType = query3.searchType === "full" ? "lucene" : query3.searchType;
           }
         }
         delete query3.searchMode;
         delete query3.searchType;
       }
+      if (query3.orderBy && typeof query3.orderBy !== "string") {
+        query3.orderby = JSON.stringify(query3.orderBy);
+        delete query3.orderBy;
+      }
+      if (query3.facets && typeof query3.facets !== "string") {
+        query3.facets = JSON.stringify(query3.facets);
+      }
       if (query3.options && typeof query3.options !== "string") {
-        query3.options = JSON.stringify(query3.options);
+        query3.options = JSON.stringify(convertOptionKeysToLowerCase(query3.options));
       }
     };
     version === "1.0" ? toV1(query2) : toV2(query2);
   }
+  function convertSuggestOrAutocompleteQuery(query2, version = "1.0") {
+    const toV1 = (query3) => {
+      if (query3.fuzzy != null) {
+        if (query3.useFuzzy == null) {
+          query3.useFuzzy = query3.fuzzy;
+        }
+        delete query3.fuzzy;
+      }
+      delete query3.options;
+      if (query3.orderBy && typeof query3.orderBy === "string") {
+        try {
+          query3.orderBy = JSON.parse(query3.orderBy);
+        } catch {
+          throw new Error(`The 'query.orderBy' property must be a valid JSON string.`);
+        }
+      }
+    };
+    const toV2 = (query3) => {
+      if (query3.useFuzzy != null) {
+        if (query3.fuzzy == null) {
+          query3.fuzzy = query3.useFuzzy;
+        }
+        delete query3.useFuzzy;
+      }
+      if (query3.orderBy && typeof query3.orderBy !== "string") {
+        query3.orderby = JSON.stringify(query3.orderBy);
+        delete query3.orderBy;
+      }
+      if (query3.options && typeof query3.options !== "string") {
+        query3.options = JSON.stringify(convertOptionKeysToLowerCase(query3.options));
+      }
+    };
+    version === "1.0" ? toV1(query2) : toV2(query2);
+  }
+  function convertOptionKeysToLowerCase(options) {
+    const newOptions = {};
+    for (const key in options) {
+      newOptions[key.toLowerCase()] = options[key];
+    }
+    return newOptions;
+  }
+  function searchOptionsReviver(key, value) {
+    switch (key) {
+      case "searchmode":
+        this.searchMode = value;
+        break;
+      case "querytype":
+        this.queryType = value;
+        break;
+      default:
+        return value;
+    }
+  }
+  var specialProperties = ["orderBy", "facets"];
 
   // src/requests/search/parsers/parseQueryResponse.ts
   function parseQueryResponse(queryResponse, config) {

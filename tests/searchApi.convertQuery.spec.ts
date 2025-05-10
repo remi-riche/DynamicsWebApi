@@ -1,7 +1,7 @@
 import { expect } from "chai";
 
-import { Query } from "../src/dynamics-web-api";
-import { convertEntitiesProperty, convertQuery, convertSearchQuery } from "../src/requests/search/convertSearchQuery";
+import { Query, Suggest } from "../src/dynamics-web-api";
+import { convertEntitiesProperty, convertQuery, convertSearchQuery, convertSuggestOrAutocompleteQuery } from "../src/requests/search/convertSearchQuery";
 import { InternalApiConfig } from "../src/utils/Config";
 
 describe("convertEntitiesProperty", () => {
@@ -171,8 +171,8 @@ describe("convertQuery", () => {
                 search: "test",
                 count: true,
                 options: {
-                    searchmode: "all",
-                    querytype: "lucene",
+                    searchMode: "all",
+                    queryType: "lucene",
                 },
             };
 
@@ -196,8 +196,8 @@ describe("convertQuery", () => {
                 returnTotalRecordCount: false,
                 count: true,
                 options: {
-                    searchmode: "any",
-                    querytype: "simple",
+                    searchMode: "any",
+                    queryType: "simple",
                 },
             };
 
@@ -209,6 +209,58 @@ describe("convertQuery", () => {
                     searchType: "full",
                     returnTotalRecordCount: false,
                 });
+            });
+        });
+
+        describe("orderBy", () => {
+            it("should parse the value into an array", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    orderBy: JSON.stringify(["name desc", "contactname asc"]),
+                };
+                convertQuery(searchQuery, "1.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    orderBy: ["name desc", "contactname asc"],
+                });
+            });
+
+            it("throws an error - invalid JSON string", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    orderBy: "invalid json string",
+                };
+
+                expect(function () {
+                    convertQuery(searchQuery, "1.0");
+                }).to.throw("The 'query.orderBy' property must be a valid JSON string.");
+            });
+        });
+
+        describe("facets", () => {
+            it("should parse the value into an array", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    facets: JSON.stringify(["name", "contactname"]),
+                };
+                convertQuery(searchQuery, "1.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    facets: ["name", "contactname"],
+                });
+            });
+
+            it("throws an error - invalid JSON string", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    facets: "invalid json string",
+                };
+
+                expect(function () {
+                    convertQuery(searchQuery, "1.0");
+                }).to.throw("The 'query.facets' property must be a valid JSON string.");
             });
         });
     });
@@ -282,9 +334,9 @@ describe("convertQuery", () => {
                 searchMode: "all",
                 searchType: "full",
                 options: {
-                    searchmode: "any",
-                    querytype: "simple",
-                    besteffortsearchenabled: true,
+                    searchMode: "any",
+                    queryType: "simple",
+                    bestEffortSearchEnabled: true,
                 },
             };
 
@@ -299,6 +351,65 @@ describe("convertQuery", () => {
                         querytype: "simple",
                         besteffortsearchenabled: true,
                     }),
+                });
+            });
+        });
+
+        describe("orderBy", () => {
+            it("converts the query correctly and orderBy should be lowercase", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    orderBy: ["name desc", "contactname asc"],
+                };
+                convertQuery(searchQuery, "2.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    orderby: JSON.stringify(["name desc", "contactname asc"]),
+                });
+            });
+
+            it("(string) left as is", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    orderBy: "doesnot matter what is in here",
+                };
+
+                convertQuery(searchQuery, "2.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    orderBy: "doesnot matter what is in here",
+                });
+            });
+        });
+
+        describe("facets", () => {
+            it("should stringify the value", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    facets: ["name", "contactname"],
+                };
+
+                convertQuery(searchQuery, "2.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    facets: JSON.stringify(["name", "contactname"]),
+                });
+            });
+
+            it("(string) left as is", () => {
+                const searchQuery: Query = {
+                    search: "test",
+                    facets: "doesnot matter what is in here",
+                };
+
+                convertQuery(searchQuery, "2.0");
+
+                expect(searchQuery).to.deep.equal({
+                    search: "test",
+                    facets: "doesnot matter what is in here",
                 });
             });
         });
@@ -354,8 +465,8 @@ describe("convertSearchQuery", () => {
                 ],
                 count: false,
                 options: {
-                    searchmode: "any",
-                    querytype: "simple",
+                    searchMode: "any",
+                    queryType: "simple",
                 },
                 facets: ["facet1", "facet2"],
             };
@@ -389,8 +500,8 @@ describe("convertSearchQuery", () => {
                 ],
                 count: false,
                 options: {
-                    searchmode: "any",
-                    querytype: "simple",
+                    searchMode: "any",
+                    queryType: "simple",
                 },
                 facets: ["facet1", "facet2"],
             };
@@ -405,6 +516,93 @@ describe("convertSearchQuery", () => {
                     searchMode: "any",
                     searchType: "simple",
                     facets: searchQuery.facets,
+                });
+            });
+        });
+
+        describe("suggest & autocomplete", () => {
+            it("converts the query correctly", () => {
+                const suggestQuery: Suggest = {
+                    search: "test",
+                    entities: [
+                        {
+                            name: "account",
+                            filter: "filter should be removed",
+                        },
+                        {
+                            name: "contact",
+                            filter: "filter should be removed",
+                        },
+                    ],
+                    options: {
+                        advancedSuggestEnabled: true,
+                    },
+                    fuzzy: true,
+                    top: 10,
+                };
+
+                const convertedQuery = convertSearchQuery(suggestQuery, "suggest", { ...defaultSearchApi, version: "1.0" });
+
+                expect(convertedQuery).to.deep.equal({
+                    search: suggestQuery.search,
+                    entities: ["account", "contact"],
+                    useFuzzy: true,
+                    top: 10,
+                });
+            });
+
+            it("useFuzzy does not get overridden if set", () => {
+                const suggestQuery: Suggest = {
+                    search: "test",
+                    useFuzzy: false,
+                    fuzzy: true,
+                };
+
+                const convertedQuery = convertSearchQuery(suggestQuery, "suggest", { ...defaultSearchApi, version: "1.0" });
+
+                expect(convertedQuery).to.deep.equal({
+                    search: suggestQuery.search,
+                    useFuzzy: false,
+                });
+            });
+
+            describe("orderBy", () => {
+                it("should parse the value into an array", () => {
+                    const suggestQuery: Suggest = {
+                        search: "test",
+                        orderBy: JSON.stringify(["name desc", "contactname asc"]),
+                    };
+                    convertQuery(suggestQuery, "1.0");
+
+                    expect(suggestQuery).to.deep.equal({
+                        search: "test",
+                        orderBy: ["name desc", "contactname asc"],
+                    });
+                });
+
+                it("throws an error - invalid JSON string", () => {
+                    const suggestQuery: Suggest = {
+                        search: "test",
+                        orderBy: "invalid json string",
+                    };
+
+                    expect(function () {
+                        convertQuery(suggestQuery, "1.0");
+                    }).to.throw("The 'query.orderBy' property must be a valid JSON string.");
+                });
+
+                it("(string) left as is", () => {
+                    const suggestQuery: Suggest = {
+                        search: "test",
+                        orderBy: "doesnot matter what is in here",
+                    };
+
+                    convertQuery(suggestQuery, "2.0");
+
+                    expect(suggestQuery).to.deep.equal({
+                        search: "test",
+                        orderBy: "doesnot matter what is in here",
+                    });
                 });
             });
         });
@@ -429,6 +627,90 @@ describe("convertSearchQuery", () => {
                         searchmode: "all",
                         querytype: "lucene",
                     }),
+                });
+            });
+        });
+
+        describe("suggest & autocomplete", () => {
+            it("converts the query correctly", () => {
+                const suggestQuery: Suggest = {
+                    search: "test",
+                    entities: [
+                        {
+                            name: "account",
+                            filter: "filter should not be removed",
+                        },
+                        {
+                            name: "contact",
+                            filter: "filter should not be removed",
+                        },
+                    ],
+                    options: {
+                        advancedSuggestEnabled: true,
+                    },
+                    fuzzy: true,
+                    top: 10,
+                };
+
+                const convertedQuery = convertSearchQuery(suggestQuery, "suggest", { ...defaultSearchApi, version: "2.0" });
+
+                expect(convertedQuery).to.deep.equal({
+                    search: suggestQuery.search,
+                    entities: JSON.stringify([
+                        {
+                            name: "account",
+                            filter: "filter should not be removed",
+                        },
+                        {
+                            name: "contact",
+                            filter: "filter should not be removed",
+                        },
+                    ]),
+                    options: JSON.stringify({
+                        advancedsuggestenabled: true,
+                    }),
+                    fuzzy: true,
+                    top: 10,
+                });
+            });
+
+            it("orderBy - converts the query correctly and orderBy should be lowercase", () => {
+                const suggestQuery: Suggest = {
+                    search: "test",
+                    orderBy: ["name desc", "contactname asc"],
+                };
+                convertSearchQuery(suggestQuery, "suggest", { ...defaultSearchApi, version: "2.0" });
+
+                expect(suggestQuery).to.deep.equal({
+                    search: "test",
+                    orderby: JSON.stringify(["name desc", "contactname asc"]),
+                });
+            });
+
+            it("useFuzzy - should become fuzzy", () => {
+                const suggestQuery: Suggest = {
+                    search: "test",
+                    useFuzzy: true,
+                };
+                convertSearchQuery(suggestQuery, "suggest", { ...defaultSearchApi, version: "2.0" });
+
+                expect(suggestQuery).to.deep.equal({
+                    search: "test",
+                    fuzzy: true,
+                });
+            });
+
+            it("fuzzy does not get overridden if set", () => {
+                const suggestQuery: Suggest = {
+                    search: "test",
+                    useFuzzy: true,
+                    fuzzy: false,
+                };
+                convertSearchQuery(suggestQuery, "autocomplete", { ...defaultSearchApi, version: "2.0" });
+
+                expect(suggestQuery).to.deep.equal({
+                    search: "test",
+                    fuzzy: false,
                 });
             });
         });

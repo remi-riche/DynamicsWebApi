@@ -891,27 +891,31 @@ export type SearchEntity = {
 };
 export type SearchOptions = Record<string, any> & {
     /**Values can be simple or lucene. */
-    querytype?: "simple" | "lucene";
+    queryType?: "simple" | "lucene";
     /**Enables intelligent query workflow to return probable set of results if no good matches are found for the search request terms.*/
-    besteffortsearchenabled?: boolean;
+    bestEffortSearchEnabled?: boolean;
     /**Enable ranking of results in the response optimized for display in search results pages where results are grouped by table.*/
-    searchmode?: SearchMode;
+    searchMode?: SearchMode;
     /**When specified as all the search terms must be matched in order to consider the document as a match. Setting its value to any defaults to matching any word in the search term.*/
-    grouprankingenabled?: boolean;
+    groupRankingEnabled?: boolean;
+};
+export type SuggestOptions = Record<string, any> & {
+    /**Enables advanced suggestions for the search query. The default is false. */
+    advancedSuggestEnabled?: boolean;
 };
 export interface SearchQueryBase {
-    /**The search parameter value contains the term to be searched for and has a 100-character limit. For suggestions, min 3 characters in addition. */
+    /**The text to search with. It has a 100-character limit. For suggestions, min 3 characters in addition. */
     search: string;
-    /**The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled. */
+    /**Limits the scope of search to a subset of tables. The default set is configured by your administrator when Dataverse search is enabled. */
     entities?: string[] | SearchEntity[] | string;
-    /**Filters are applied while searching data and are specified in standard OData syntax. */
+    /**Limits the scope of the search results returned. */
     filter?: string;
 }
 export interface Query extends SearchQueryBase {
-    /**V2. Whether to return the total record count.*/
+    /**V2. Specify true to return the total record count; otherwise false. The default is false. */
     count?: boolean;
     /**Facets support the ability to drill down into data results after they've been retrieved. */
-    facets?: string[];
+    facets?: string | string[];
     /**
      * V1. Specify true to return the total record count; otherwise false. The default is false.
      * @deprecated Use "count".
@@ -921,8 +925,8 @@ export interface Query extends SearchQueryBase {
     skip?: number;
     /**Specifies the number of search results to retrieve. The default is 50, and the maximum value is 100. */
     top?: number;
-    /**A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
-    orderBy?: string[];
+    /**A list of clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
+    orderBy?: string | string[];
     /**V2. Options are settings configured to search a search term. */
     options?: string | SearchOptions;
     /**
@@ -941,14 +945,26 @@ export interface Search extends Query {
 }
 export interface Suggest extends SearchQueryBase {
     /**Use fuzzy search to aid with misspellings. The default is false. */
+    fuzzy?: boolean;
+    /**
+     * Use fuzzy search to aid with misspellings. The default is false.
+     * @deprecated Use "fuzzy".
+     */
     useFuzzy?: boolean;
+    /**V2. Options are settings configured to search a search term. */
+    options?: string | SuggestOptions;
     /**Number of suggestions to retrieve. The default is 5. */
     top?: number;
     /**A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence. */
-    orderBy?: string[];
+    orderBy?: string | string[];
 }
 export interface Autocomplete extends SearchQueryBase {
     /**Use fuzzy search to aid with misspellings. The default is false. */
+    fuzzy?: boolean;
+    /**
+     * Use fuzzy search to aid with misspellings. The default is false.
+     * @deprecated Use "fuzzy".
+     */
     useFuzzy?: boolean;
 }
 export interface QueryRequest extends BaseRequest {

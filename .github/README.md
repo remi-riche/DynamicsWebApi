@@ -2161,92 +2161,98 @@ const isDeleted = await dynamicsWebApi.deleteRecord({
 
 ## Work with Dataverse Search API
 
-**Important!** Currently only Search API 1.0 is supported. Search API 2.0 is coming with `v.2.3.0`. 
-If you must use 2.0, you could [use corresponding Actions](#execute-web-api-actions) for now. [more info](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/overview?tabs=sdk)
+DynamicsWebApi can be used to call Dataverse Search API and utilize its powerful Query, Suggest and Autocomplete capabilities. Before using, I highly recommend to get familiar with it by reading an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/overview?tabs=webapi).
 
-DynamicsWebApi can be used to call Dataverse Search API and utilize its powerful Search, Suggest and Autocomplete capabilities. Before using, I highly recommend to get familiar with it by reading an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/legacy).
+**Important!** This documentation is based on the Dataverse Search API v2.0. If you would like to find documentation about v1.0, please check [here](https://github.com/AleksandrRogov/DynamicsWebApi/blob/v2.2.1/.github/README.md#work-with-dataverse-search-api). But keep in mind, that some properties in the request and response objects are marked as deprecated to encourage usage of the v2.0 properties. Deprecated properties will be removed in the next major version.
 
-To set Search API version use: `new DynamicsWebApi({ searchApi: { version: "1.0" }})`.
+To set a Search API version use: `new DynamicsWebApi({ searchApi: { version: "2.0" }})`.
 
-Search, Suggest and Autocomplete requests have a common property `query`. This is the main property that configures a relevance search request. 
+All functions: Query, Suggest and Autocomplete, - can be called with a single `string` parameter "a search term". But to utilize the full power of the relevance search use a common property `query` that is available in all 3 requests.
 
-All functions can also be called with a single parameter `term` which is of type `string`.
+_Examples below follow Microsoft's official documenation._
 
-Examples below follow Microsoft official documenation.
+**Note!** All request properties are `camelCase`, even though in Dataverse Search API v2.0 they are lowercase.
 
-### Search
+### Query
 
-The following table describes all parameters for a `search` request:
+The following table describes all parameters for a `query` request:
 
 Property Name | Type | Description
 ------------ | ------------- | -------------
 search | `string` | **Required**. The search parameter value contains the term to be searched for and has a 100-character limit.
-entities | `string[]` | The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled.
+count | `boolean` | Specify true to return the total record count; otherwise false. The default is **false**.
+entities | `string`, `string[]` or `SearchEntity[]` | Limits the scope of search to a subset of tables. The default set is configured by your administrator when Dataverse search is enabled.
 facets | `string[]` | Facets support the ability to drill down into data results after they've been retrieved.
-filter | `string` | Filters are applied while searching data and are specified in standard OData syntax.
-orderBy | `string[]` | A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence.
-returnTotalRecordCount | `boolean` | Specify true to return the total record count; otherwise false. The default is **false**.
-searchMode | `string` | Specifies whether **any** or **all** the search terms must be matched to count the document as a match. The default is '**any**'.
-searchType | `string` | The search type specifies the syntax of a search query. Using '**simple**' selects simple query syntax and '**full**' selects Lucene query syntax. The default is '**simple**'.
+filter | `string` | Limits the scope of the search results returned.
+options | `string` or `SearchOptions` | Options are settings configured to search a search term.
+orderBy | `string[]` | Specifies how to order the results in order of precedence.
 skip | `number` | Specifies the number of search results to skip.
 top | `number` | Specifies the number of search results to retrieve. The default is **50**, and the maximum value is **100**.
+
+**SearchEntity**
+
+Use this type to compose the array of tables to pass to the entities parameter.
+
+Property Name | Type | Description
+------------ | ------------- | -------------
+name | `string` | **Required**. Logical name of the table. Specifies scope of the query.
+selectColumns | `string[]` | Optional. List of columns that needs to be projected when table documents are returned in response. If empty, only the table primary name is returned.
+searchColumns | `string[]` | Optional. List of columns to scope the query on. If empty, only the table primary name is searched on.
+filter | `string` | Optional. Filters applied on the entity.
+
+**SearchOptions**
+
+Options are settings configured to search a search term.
+
+Property Name | Type | Description
+------------ | ------------- | -------------
+bestEffortSearchEnabled | `boolean` | Enables intelligent query workflow to return probable set of results if no good matches are found for the search request terms.
+groupRankingEnabled | `boolean` | When specified as all the search terms must be matched in order to consider the document as a match. Setting its value to any defaults to matching any word in the search term.
+queryType | `string` | Query Type. Values can be 'simple' or 'lucene'.
+searchMode | `string` | Enable ranking of results in the response optimized for display in search results pages where results are grouped by table. Values can be 'any' or 'all'.
 
 **Examples:**
 
 ```ts
-let result = await dynamicsWebApi.search({
+let result = await dynamicsWebApi.query({
     query: {
         search: "<search term>"
     }
 });
 
 //the same as:
-result = await dynamicsWebApi.search("<search term>");
+result = await dynamicsWebApi.query("<search term>");
 ```
 
 ```ts
-const result = await dynamicsWebApi.search({
-    query: {
-        search: "maria",
-        facets: [
-            "@search.entityname,count:100",
-            "account.primarycontactid,count:100",
-            "ownerid,count:100",
-            "modifiedon,values:2019-04-27T00:00:00|2020-03-27T00:00:00|2020-04-20T00:00:00|2020-04-27T00:00:00",
-            "createdon,values:2019-04-27T00:00:00|2020-03-27T00:00:00|2020-04-20T00:00:00|2020-04-27T00:00:00"
-        ]
-    }
-});
-```
+//more complex example (from Microsoft's documentation)
 
-```ts
-const result = await dynamicsWebApi.search({
-    query: {
-        search: "maria",
-        filter: "account:modifiedon ge 2020-04-27T00:00:00," +
-                "activities: regardingobjecttypecode eq 'account', annotation:objecttypecode eq 'account'," +
-                "incident: (prioritycode eq 1 or prioritycode eq 2)"
-    }
-});
-```
-
-```ts
-const result = await dynamicsWebApi.search({
-    query: {
-        search: "maria",
-        facets: [
-            "@search.entityname,count:100",  
-            "account.primarycontactid,count:100",  
-            "ownerid,count:100",  
-            "modifiedon,values:2019-04-27T00:00:00|2020-03-27T00:00:00|2020-04-20T00:00:00|2020-04-27T00:00:00",
-            "createdon,values:2019-04-27T00:00:00|2020-03-27T00:00:00|2020-04-20T00:00:00|2020-04-27T00:00:00"
-        ]
-    }
+const result = await dynamicsWebApi.query({
+    search: "Contoso",
+    skip: 0,
+    top: 7,
+    entities: [{
+        name: "account",
+        selectColumns: ["name", "createdon"],
+        searchColumns: ["name"],
+        filter: "statecode eq 0"
+    }, {
+        name: "contact",
+        selectColumns: ["fullname", "createdon"],
+        searchColumns: ["fullname"],
+        filter: "statecode eq 0"
+    }],
+    orderBy: ["createdon desc"],
+    filter: "createdon gt 2022-08-15",
+    count: true
 });
 
-const firstHit = result.value[0];
-const firstHitScore = firstHit["@search.score"];
-const firstSearchEntityName = result.facets["@search.entityname"][0].Value;
+//result:
+const error = result.Error;
+const value = result.Value;
+
+const firstItemId = value[0].Id;
+const firstItemEntityName = value[0].EntityName;
 ```
 
 ### Suggest
@@ -2255,12 +2261,20 @@ The following table describes all parameters for a `suggest` request:
 
 Property Name | Type | Description
 ------------ | ------------- | -------------
-search | `string` | **Required**. The search parameter value contains the term to be searched for and has a 3-character min limit and max 100-character limit.
-entities | `string[]` | The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled.
+search | `string` | **Required**. The text to search with. Search term must be at least three characters long and has a 100 character limit.
+entities | `string`, `string[]` or `SearchEntity[]` | Limits the scope of search to a subset of tables. The default set is configured by your administrator when Dataverse search is enabled.
+filter | `string` | Limits the scope of the search results returned.
+fuzzy | `boolean` | Use fuzzy search to aid with misspellings. The default is false.
+options | `string` or `SuggestionOptions` | Options are settings configured to search a search term.
 orderBy | `string[]` | A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence.
-filter | `string` | Filters are applied while searching data and are specified in standard OData syntax.
 top | `number` | Number of suggestions to retrieve. The default is **5**.
-useFuzzy | `boolean` | Use fuzzy search to aid with misspellings. The default is false.
+
+**SuggestionOptions**
+Options are settings configured to search a search term.
+
+Property Name | Type | Description
+------------ | ------------- | -------------
+advancedSuggestEnabled | `boolean` | Enables advanced suggestions for the search query. The default is false.
 
 **Examples:**
 
@@ -2274,8 +2288,9 @@ let result = await dynamicsWebApi.suggest({
 //the same as:
 result = await dynamicsWebApi.suggest("mar");
 
-const firstText = result.value[0].text;
-const firstDocument = result.value[0].document;
+const firstText = result.Value[0].Text;
+const firstDocument = result.Value[0].Document;
+const error = result.Error;
 ```
 
 ```ts
@@ -2294,10 +2309,10 @@ The following table describes all parameters for an `autocomplete` request:
 
 Property Name | Type | Description
 ------------ | ------------- | -------------
-search | `string` | **Required**. The search parameter value contains the term to be searched for and has a 100-character limit.
-entities | `string[]` | The default table list searches across all Dataverse search–configured tables and columns. The default list is configured by your administrator when Dataverse search is enabled.
-filter | `string` | Filters are applied while searching data and are specified in standard OData syntax.
-useFuzzy | `boolean` | Use fuzzy search to aid with misspellings. The default is false.
+search | `string` | **Required**. Search term must be at least one character long and has a 100 character limit.
+entities | `string`, `string[]` or `SearchEntity[]` | Limits the scope of search to a subset of tables. The default set is configured by your administrator when Dataverse search is enabled.
+filter | `string` | Limits the scope of the search results returned.
+fuzzy | `boolean` | Use fuzzy search to aid with misspellings. The default is false.
 
 **Examples:**
 
@@ -2311,7 +2326,8 @@ let result = await dynamicsWebApi.autocomplete({
 //the same as:
 result = await dynamicsWebApi.autocomplete("mar");
 
-const value = result.value;
+const error = result.Error;
+const value = result.Value;
 ```
 
 ```ts
