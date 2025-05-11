@@ -17,7 +17,7 @@ export function parseQueryResponse(queryResponse: QueryResponseInternal, config:
             response: responseValue,
         };
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             toReturn.value = responseValue.Value;
             toReturn.facets = responseValue.Facets;
             toReturn.totalrecordcount = responseValue.Count;
@@ -33,7 +33,7 @@ export function parseQueryResponse(queryResponse: QueryResponseInternal, config:
             ...queryResponse,
         };
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             toReturn.response = {
                 Count: queryResponse.totalrecordcount,
                 Value: queryResponse.value,

@@ -342,7 +342,7 @@ Both `dataApi` and `searchApi` can be omitted from a configuration. Their defaul
 | Property Name | Type | Description |
 |--------|--------|--------|
 | escapeSpecialCharacters | `boolean` | `v2.3.0+` **Works only with Search API 2.0**. Optional. Escapes special characters in the search string. |
-| disableResponseCompatibility | `boolean` | `v2.3.0+`. Disables forced compatibility of the responses between v1 and v2. It's highly recommended to enable this option, because all response properties are duplicated by default for compatibility reasons. |
+| enableResponseCompatibility | `boolean` | `v2.3.0+`. Enables compatibility of the responses between v1 and v2. Only enable this option temporarily, because it will force all response properties to be duplicated to achieve a full compatibility. |
 
 ## Request Examples
 
@@ -2196,11 +2196,31 @@ All functions: Query, Suggest and Autocomplete, - can be called with a single `s
 
 _Examples below follow Microsoft's official documenation._
 
-> [!NOTE]
+> [!IMPORTANT]
 > All request properties are `camelCase`, even though in Dataverse Search API v2.0 they are lowercase.
 
-> [!TIP]
+> [!NOTE]
 > All objects in requests and responses are automatically converted and encoded as necessary (per official documentation), simplifying developer's work to construct the request and process the response.
+
+> [!TIP]
+> To enable a full compatibility between Search API v1 and v2 responses, you can temporarily set `enableResponseCompatibility` to `true` (in a `searchApi` config, see the code snippet below). The downside is that this will force all properties in the responses to be duplicated which will consume more memory (and cpu), thus it is not enabled by default.
+>
+> This option can be useful to test if your search api v1.0 queries are compatible with v2.0 before rewriting your code. The main compatibility issue could be a `filter` value because its syntax has been changed by Microsoft.
+>
+> Another use-case could be if you would like to rewrite your code to be fully compatible with v2.0 without switching to v2.0 queries (by keeping `version: "1.0"`) and having to deal with exceptions because of the `filter` incompatibility.
+
+To turn on the response compatibility:
+
+```ts
+const webApi = new DynamicsWebApi({
+    searchApi: {
+        // version: "2.0",
+        options: {
+            enableResponseCompatibility: true
+        }
+    }
+})
+```
 
 ### Query
 

@@ -17,7 +17,7 @@ export function parseAutocompleteResponse(queryResponse: AutocompleteResponseInt
             response: responseValue,
         };
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             toReturn.value = responseValue.Value;
             toReturn.querycontext = responseValue.QueryContext;
         }
@@ -28,10 +28,10 @@ export function parseAutocompleteResponse(queryResponse: AutocompleteResponseInt
     const toV2 = (): AutocompleteResponse => {
         // @ts-ignore we don't enforce to have all properties in the response if the compatibility is disabled
         const toReturn: AutocompleteResponse = {
-            ...queryResponse
-        }
+            ...queryResponse,
+        };
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             toReturn.response = {
                 Value: queryResponse.value,
                 QueryContext: queryResponse.querycontext,

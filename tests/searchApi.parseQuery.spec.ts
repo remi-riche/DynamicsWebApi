@@ -7,7 +7,7 @@ import type { AutocompleteResponse, QueryResponse, SuggestResponse } from "../sr
 
 describe("parseQueryResponse", () => {
     it("returns undefined if response is undefined", () => {
-        const result = parseQueryResponse(undefined!, { version: "2.0", url: "" });
+        const result = parseQueryResponse(undefined!, { version: "2.0", url: "", enableSearchApiResponseCompatibility: true });
         expect(result).to.be.undefined;
     });
 
@@ -31,7 +31,7 @@ describe("parseQueryResponse", () => {
         };
 
         it("should parse the query response correctly", () => {
-            const result = parseQueryResponse(queryResponse, { version: "2.0", url: "" });
+            const result = parseQueryResponse(queryResponse, { version: "2.0", url: "", enableSearchApiResponseCompatibility: true });
             expect(result).to.deep.equal({
                 ...queryResponse,
                 value: responseValue.Value,
@@ -54,7 +54,7 @@ describe("parseQueryResponse", () => {
         };
 
         it("should parse the query response correctly", () => {
-            const result = parseQueryResponse(queryResponse, { version: "1.0", url: "" });
+            const result = parseQueryResponse(queryResponse, { version: "1.0", url: "", enableSearchApiResponseCompatibility: true });
             expect(result).to.deep.equal({
                 ...queryResponse,
                 response: {
@@ -71,7 +71,7 @@ describe("parseQueryResponse", () => {
 
 describe("parseSuggestResponse", () => {
     it("returns undefined if response is undefined", () => {
-        const result = parseSuggestResponse(undefined!, { version: "2.0", url: "" });
+        const result = parseSuggestResponse(undefined!, { version: "2.0", url: "", enableSearchApiResponseCompatibility: true });
         expect(result).to.be.undefined;
     });
 
@@ -90,7 +90,7 @@ describe("parseSuggestResponse", () => {
             "@odata.context": "https://example.com/#QueryResponse",
         };
 
-        const result = parseSuggestResponse(queryResponse, { version: "2.0", url: "" });
+        const result = parseSuggestResponse(queryResponse, { version: "2.0", url: "", enableSearchApiResponseCompatibility: true });
 
         it("should parse the query response correctly", () => {
             expect(result).to.deep.equal({
@@ -114,7 +114,7 @@ describe("parseSuggestResponse", () => {
             "@odata.context": "https://example.com/#QueryResponse",
         };
 
-        const result = parseSuggestResponse(queryResponse, { version: "1.0", url: "" });
+        const result = parseSuggestResponse(queryResponse, { version: "1.0", url: "", enableSearchApiResponseCompatibility: true });
 
         it("should parse the query response correctly", () => {
             expect(result).to.deep.equal({
@@ -135,7 +135,7 @@ describe("parseSuggestResponse", () => {
 
 describe("parseAutocompleteResponse", () => {
     it("returns undefined if response is undefined", () => {
-        const result = parseAutocompleteResponse(undefined!, { version: "2.0", url: "" });
+        const result = parseAutocompleteResponse(undefined!, { version: "2.0", url: "", enableSearchApiResponseCompatibility: true });
         expect(result).to.be.undefined;
     });
 
@@ -154,7 +154,7 @@ describe("parseAutocompleteResponse", () => {
             "@odata.context": "https://example.com/#QueryResponse",
         };
 
-        const result = parseAutocompleteResponse(queryResponse, { version: "2.0", url: "" });
+        const result = parseAutocompleteResponse(queryResponse, { version: "2.0", url: "", enableSearchApiResponseCompatibility: true });
 
         it("should parse the autocomplete response correctly", () => {
             expect(result).to.deep.equal({
@@ -174,7 +174,7 @@ describe("parseAutocompleteResponse", () => {
             "@odata.context": "https://example.com/#QueryResponse",
         };
 
-        const result = parseAutocompleteResponse(queryResponse, { version: "1.0", url: "" });
+        const result = parseAutocompleteResponse(queryResponse, { version: "1.0", url: "", enableSearchApiResponseCompatibility: true });
 
         it("should parse the autocomplete response correctly", () => {
             expect(result).to.deep.equal({

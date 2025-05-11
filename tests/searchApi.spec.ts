@@ -5,27 +5,27 @@ import * as mocks from "./stubs";
 import { DynamicsWebApi, Query, Autocomplete, Suggest } from "../src/dynamics-web-api";
 
 const dynamicsWebApiTest = new DynamicsWebApi({
-    dataApi: {
-        version: "8.2",
+    searchApi: {
+        options: {
+            enableResponseCompatibility: true,
+        },
     },
 });
 
 const dynamicsWebApiSearchV2 = new DynamicsWebApi({
     searchApi: {
         version: "2.0",
+        options: {
+            enableResponseCompatibility: true,
+        },
     },
 });
 
-const dynamicsWebApiSearchV1NoCompatibility = new DynamicsWebApi({
-    searchApi: {
-        options: { disableResponseCompatibility: true },
-    },
-});
+const dynamicsWebApiSearchV1NoCompatibility = new DynamicsWebApi();
 
 const dynamicsWebApiSearchV2NoCompatibility = new DynamicsWebApi({
     searchApi: {
         version: "2.0",
-        options: { disableResponseCompatibility: true },
     },
 });
 
@@ -170,7 +170,7 @@ describe("dynamicsWebApi.query -", () => {
         });
     });
 
-    describe("v2.0 - disableResponseCompatibility = true", () => {
+    describe("v2.0 - enableResponseCompatibility = false", () => {
         let scope;
         const searchQuery: Query = {
             search: "test",
@@ -205,7 +205,7 @@ describe("dynamicsWebApi.query -", () => {
         });
     });
 
-    describe("v1.0 - disableResponseCompatibility = true", () => {
+    describe("v1.0 - enableResponseCompatibility = false", () => {
         let scope;
         const searchQuery: Query = {
             search: "test",
@@ -345,7 +345,7 @@ describe("dynamicsWebApi.suggest -", () => {
         });
     });
 
-    describe("v1.0 - disableResponseCompatibility = true", () => {
+    describe("v1.0 - enableResponseCompatibility = false", () => {
         let scope;
         const suggestQuery: Suggest = {
             search: "test",
@@ -379,7 +379,7 @@ describe("dynamicsWebApi.suggest -", () => {
         });
     });
 
-    describe("v2.0 - disableResponseCompatibility = true", () => {
+    describe("v2.0 - enableResponseCompatibility = false", () => {
         let scope;
         const suggestQuery: Suggest = {
             search: "test",
@@ -517,7 +517,7 @@ describe("dynamicsWebApi.autocomplete -", () => {
             expect(scope.isDone()).to.be.true;
         });
     });
-    describe("v1.0 - disableResponseCompatibility = true", () => {
+    describe("v1.0 - enableResponseCompatibility = false", () => {
         let scope;
         const autocompleteQuery: Autocomplete = {
             search: "test",
@@ -550,7 +550,7 @@ describe("dynamicsWebApi.autocomplete -", () => {
             expect(scope.isDone()).to.be.true;
         });
     });
-    describe("v2.0 - disableResponseCompatibility = true", () => {
+    describe("v2.0 - enableResponseCompatibility = false", () => {
         let scope;
         const autocompleteQuery: Autocomplete = {
             search: "test",

@@ -1121,10 +1121,10 @@ export type SearchApiOptions = {
      */
     escapeSpecialCharacters?: boolean;
     /**
-     * Disables compatibility of the responses between v1 and v2.
-     * Enabling this option is highly recommended, because all response properties are duplicated by default for compatibility reasons.
+     * Enables compatibility of the responses between v1 and v2.
+     * Only enable this option temporarily, because it will force all response properties to be duplicated to achieve a full compatibility.
      */
-    disableResponseCompatibility?: boolean;
+    enableResponseCompatibility?: boolean;
 };
 
 export interface ApiConfig<TOptions = any> {

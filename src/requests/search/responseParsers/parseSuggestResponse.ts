@@ -12,7 +12,7 @@ export function parseSuggestResponse(queryResponse: SuggestResponseInternal, con
     const toV1 = (): SuggestResponse => {
         const responseValue = JSON.parse(queryResponse.response, dateReviver) as SuggestResponse["response"];
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             responseValue.Value?.forEach((item: SuggestResponseValue) => {
                 item.document = item.Document;
                 item.text = item.Text;
@@ -24,7 +24,7 @@ export function parseSuggestResponse(queryResponse: SuggestResponseInternal, con
             response: responseValue,
         };
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             toReturn.value = responseValue.Value;
             toReturn.querycontext = responseValue.QueryContext;
         }
@@ -33,7 +33,7 @@ export function parseSuggestResponse(queryResponse: SuggestResponseInternal, con
     };
 
     const toV2 = (): SuggestResponse => {
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             queryResponse.value?.forEach((item: SuggestResponseValue) => {
                 item.Document = item.document;
                 item.Text = item.text;
@@ -45,7 +45,7 @@ export function parseSuggestResponse(queryResponse: SuggestResponseInternal, con
             ...queryResponse,
         };
 
-        if (!config.disableSearchApiResponseCompatibility) {
+        if (config.enableSearchApiResponseCompatibility) {
             toReturn.response = {
                 Value: queryResponse.value,
                 QueryContext: queryResponse.querycontext,
