@@ -2321,8 +2321,7 @@ Options are settings configured to search a search term.
 
 Property Name | Type | Description
 ------------ | ------------- | -------------
-advancedSuggestEnabled | `boolean` | Enables advanced suggestions for the search query. The default is false. _Tbh, I 
-don't know what this option does, the official documentation does not provide any info, so lmk if you know what it is._
+advancedSuggestEnabled | `boolean` | Enables advanced suggestions for the search query. The default is false. _Tbh, I don't know what this option does, the official documentation does not provide any info, so lmk if you know what it is._
 
 **Examples:**
 
