@@ -22,7 +22,7 @@ Browser-compiled script and type definitions can be found in a v2 [dist](https:/
 
 ## Main Features
 
-- **Microsoft Dataverse Search API**. Access the full power of its Search, Suggestion and Autocomplete capabilities.
+- **Microsoft Dataverse Search API**. Access the full power of its Search (Query), Suggestion and Autocomplete capabilities.
 - **Batch Requests**. Convert all requests into a Batch operation with two lines of code.
 - **Simplicity and Automation**. Such as automated paging, big file downloading/uploading in chunks of data, automated conversion of requests with long URLs into a Batch Request in the background and more!
 - **CRUD operations**. Including Fetch XML, Actions and Functions in Microsoft Dataverse Web API.
@@ -47,7 +47,8 @@ Also, please check [suggestions and contributions](#contributions) section to le
 
 Check out [Dataverse Terminology](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/understand-terminology). Microsoft has done some changes in the namings of the objects and components of D365 and since DynamicsWebApi has been developing for many years there may be _conflicting_ naming, such as: `createEntity` - which _right now_ means "Create a Table Definition". Dataverse SDK terminology is what the library has been based on. I have no plans on changing that (except in documentation), mainly because Microsoft may change the namings again in the future which will lead to naming issues ...again.
 
-**Please note!** "Dynamics 365" in this readme refers to Microsoft Dataverse (formerly known as Microsoft Common Data Service) / Microsoft Dynamics 365 Customer Engagement / Micorosft Dynamics CRM. **NOT** Microsoft Dynamics 365 Finance and Operations.
+> [!NOTE]
+> "Dynamics 365" in this readme refers to Microsoft Dataverse (formerly known as Microsoft Common Data Service) / Microsoft Dynamics 365 Customer Engagement / Micorosft Dynamics CRM. **NOT** Microsoft Dynamics 365 Finance and Operations.
 
 ## Table of Contents
 
@@ -2163,7 +2164,7 @@ const isDeleted = await dynamicsWebApi.deleteRecord({
 
 DynamicsWebApi can be used to call Dataverse Search API and utilize its powerful Query, Suggest and Autocomplete capabilities. Before using, I highly recommend to get familiar with it by reading an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/overview?tabs=webapi).
 
-**Important!** This documentation is based on the Dataverse Search API v2.0. If you would like to find documentation about v1.0, please check [here](https://github.com/AleksandrRogov/DynamicsWebApi/blob/v2.2.1/.github/README.md#work-with-dataverse-search-api). But keep in mind, that some properties in the request and response objects are marked as deprecated to encourage usage of the v2.0 properties. Deprecated properties will be removed in the next major version.
+**Important!** This documentation is based on the Dataverse Search API v2.0 (added in `v2.3.0`). If you would like to find documentation for v1.0, please check [here](https://github.com/AleksandrRogov/DynamicsWebApi/blob/v2.2.1/.github/README.md#work-with-dataverse-search-api). Just keep in mind, that some properties in the request and response objects are marked as deprecated to encourage usage of the v2.0 properties. Deprecated properties and requests will be removed in the next major version.
 
 To set a Search API version use: `new DynamicsWebApi({ searchApi: { version: "2.0" }})`.
 
@@ -2225,35 +2226,57 @@ result = await dynamicsWebApi.query("<search term>");
 ```
 
 ```ts
-//more complex example (from Microsoft's documentation)
+//more complex example (from Microsoft's official documentation)
 
 const result = await dynamicsWebApi.query({
-    search: "Contoso",
-    skip: 0,
-    top: 7,
-    entities: [{
-        name: "account",
-        selectColumns: ["name", "createdon"],
-        searchColumns: ["name"],
-        filter: "statecode eq 0"
-    }, {
-        name: "contact",
-        selectColumns: ["fullname", "createdon"],
-        searchColumns: ["fullname"],
-        filter: "statecode eq 0"
-    }],
-    orderBy: ["createdon desc"],
-    filter: "createdon gt 2022-08-15",
-    count: true
+    query: {
+        search: "Contoso",
+        skip: 0,
+        top: 7,
+        entities: [{
+            name: "account",
+            selectColumns: ["name", "createdon"],
+            searchColumns: ["name"],
+            filter: "statecode eq 0"
+        }, {
+            name: "contact",
+            selectColumns: ["fullname", "createdon"],
+            searchColumns: ["fullname"],
+            filter: "statecode eq 0"
+        }],
+        orderBy: ["createdon desc"],
+        filter: "createdon gt 2022-08-15",
+        count: true
+    }
 });
 
-//result:
-const error = result.Error;
-const value = result.Value;
+//all data for v2 is returned inside the "response" property
+const { Value: value, Error: error } = result.response;
 
-const firstItemId = value[0].Id;
-const firstItemEntityName = value[0].EntityName;
+console.log("Total records found: ", result.response.Count);
+
+if (!error && value.length) {
+    //very sophisticated processing of search results :)
+    const entityId = value[0].Id;
+    const entityName = value[0].EntityName;
+
+    //entity here is "kind of" entity, it may have more helpful attributes
+    const entity = value[0].Attributes;
+
+    if (entityName === "account") {
+        const accountName = entity.name;
+        const objectTypeCode = entity["@search.objecttypecode"]; //0
+    } else {
+        const contactFullname = entity.fullname;
+        const objectTypeCode = entity["@search.objecttypecode"]; //2
+    }
+
+    //etc
+}
 ```
+
+As you can see all objects are automatically converted and encoded as per official documentation, simplifying developer's
+work to construct the request and to process the response.
 
 ### Suggest
 
@@ -2265,45 +2288,76 @@ search | `string` | **Required**. The text to search with. Search term must be a
 entities | `string`, `string[]` or `SearchEntity[]` | Limits the scope of search to a subset of tables. The default set is configured by your administrator when Dataverse search is enabled.
 filter | `string` | Limits the scope of the search results returned.
 fuzzy | `boolean` | Use fuzzy search to aid with misspellings. The default is false.
-options | `string` or `SuggestionOptions` | Options are settings configured to search a search term.
+options | `string` or `SuggestOptions` | Options are settings configured to search a search term.
 orderBy | `string[]` | A list of comma-separated clauses where each clause consists of a column name followed by 'asc' (ascending, which is the default) or 'desc' (descending). This list specifies how to order the results in order of precedence.
 top | `number` | Number of suggestions to retrieve. The default is **5**.
 
-**SuggestionOptions**
+**SuggestOptions**
+
 Options are settings configured to search a search term.
 
 Property Name | Type | Description
 ------------ | ------------- | -------------
-advancedSuggestEnabled | `boolean` | Enables advanced suggestions for the search query. The default is false.
+advancedSuggestEnabled | `boolean` | Enables advanced suggestions for the search query. The default is false. _Tbh, I 
+don't know what this option does, the official documentation does not provide any info, so lmk if you know what it is._
 
 **Examples:**
 
 ```ts
 let result = await dynamicsWebApi.suggest({
     query: {
-        search: "mar"
+        search: "Con"
     }
 });
 
-//the same as:
-result = await dynamicsWebApi.suggest("mar");
+//same as:
+result = await dynamicsWebApi.suggest("Con");
 
-const firstText = result.Value[0].Text;
-const firstDocument = result.Value[0].Document;
-const error = result.Error;
+//all data for v2 is returned inside the "response" property
+const { Value: value, Error: error } = result.response;
+
+if (!error && value.length) {
+    const { Text: text, Document: document } = value[0];
+}
 ```
 
 ```ts
+//more complex example:
+
 const result = await dynamicsWebApi.suggest({
     query: {
-        search: "mar",
-        filter: "account:modifiedon ge 2020-04-27T00:00:00," +
-                "activities:regardingobjecttypecode eq 'account', annotation:objecttypecode eq 'account'"
-    }
-});
+        search: "Con",
+        entities: [{
+            name: "account",
+            selectColumns: ["name"],
+        }, {
+            name: "contact",
+            selectColumns: ["fullname"],
+        }],
+        filter: "modifiedon ge 2020-04-27T00:00:00Z and statecode eq 0",
+        orderBy: ["modifiedon asc"],
+        fuzzy: true,
+    },
+  });
+
+  const { Value: value, Error: error } = result.response;
+
+  if (!error && value.length) {
+    const { Text: text, Document: document } = value[0];
+  }
 ```
 
 ### Autocomplete
+
+> [!WARNING] 
+> **Checked: May 11th, 2025.**
+> Something is wrong with this Search API endpoint. Does not matter what requests are done, I always get an error:
+>
+> `Invalid expression: Unsupported function call: search.ismatchscoring. This function is only supported in the Search API. Parameter name: $filter.`
+>
+This looks like and ootb issue, they are using an unsupported operator `search.ismatchscoring` in a [Search Service's Autocomplete query](https://learn.microsoft.com/en-us/azure/search/search-query-odata-full-text-search-functions) function. Let me know if this gets resolved, I will remove the warning.
+>
+> P.S. Neither v1, v2 nor `searchautocomplete` action are working.
 
 The following table describes all parameters for an `autocomplete` request:
 
@@ -2323,21 +2377,34 @@ let result = await dynamicsWebApi.autocomplete({
     }
 });
 
-//the same as:
+//it's similar to:
 result = await dynamicsWebApi.autocomplete("mar");
 
-const error = result.Error;
-const value = result.Value;
+//all data for v2 is returned inside the "response" property
+const { Value: value, Error: error } = result.response;
 ```
 
 ```ts
+//a more complex request
+
 const result = await dynamicsWebApi.autocomplete({
     query: {
-        search: "mar",
-        filter: "account:modifiedon ge 2020-04-27T00:00:00," +
-                "activities:regardingobjecttypecode eq 'account', annotation:objecttypecode eq 'account'"
-    }
+        search: "tes",
+        entities: [{
+            name: "account",
+            selectColumns: ["name", "createdon"],
+            searchColumns: ["name"],
+        }],
+        filter: "modifiedon ge 2020-04-27T00:00:00Z and statecode eq 0",
+        fuzzy: true,
+    },
 });
+
+const { Value: value, Error: error } = result.response;
+
+if (!error) {
+    console.log("Autocompleted:", value);
+}
 ```
 
 ## Retrieve CSDL $metadata document
@@ -2350,7 +2417,8 @@ const request: DynamicsWebApi.CsdlMetadataRequest = {
 }
 
 //the parameter "request" is optional and can be ommited if additional annotations are not necessary
-const csdlDocument: string = await dynamicsWebApi.retrieveCsdlMetadata(request);
+const csdlDocument: string = 
+    await dynamicsWebApi.retrieveCsdlMetadata(request);
 ```
 
 The `csdlDocument` will be the type of `string`. DynamicsWebApi does not parse the contents of the document and it should be done by the developer.
@@ -2406,7 +2474,8 @@ const backgroundOperation = await dynamicsWebApi.retrieve({
 });
 
 // 2. getting the status from the status monitor
-const backgroundOperationStatus = await dynamicsWebApi.getBackgroundOperationStatus(backgroundOperationId);
+const backgroundOperationStatus = 
+    await dynamicsWebApi.getBackgroundOperationStatus(backgroundOperationId);
 ```
 
 ### Cancel background operation
@@ -2425,7 +2494,8 @@ await dynamicsWebApi.update({
 
 //or via the status monitor
 
-const backgroundOperationStatus = await dynamicsWebApi.cancelBackgroundOperation(backgroundOperationId);
+const backgroundOperationStatus = 
+    await dynamicsWebApi.cancelBackgroundOperation(backgroundOperationId);
 ```
 
 ### Request a callback

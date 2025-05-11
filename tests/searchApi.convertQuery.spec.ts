@@ -572,7 +572,7 @@ describe("convertSearchQuery", () => {
                         search: "test",
                         orderBy: JSON.stringify(["name desc", "contactname asc"]),
                     };
-                    convertQuery(suggestQuery, "1.0");
+                    convertSuggestOrAutocompleteQuery(suggestQuery, "1.0");
 
                     expect(suggestQuery).to.deep.equal({
                         search: "test",
@@ -587,23 +587,10 @@ describe("convertSearchQuery", () => {
                     };
 
                     expect(function () {
-                        convertQuery(suggestQuery, "1.0");
+                        convertSuggestOrAutocompleteQuery(suggestQuery, "1.0");
                     }).to.throw("The 'query.orderBy' property must be a valid JSON string.");
                 });
-
-                it("(string) left as is", () => {
-                    const suggestQuery: Suggest = {
-                        search: "test",
-                        orderBy: "doesnot matter what is in here",
-                    };
-
-                    convertQuery(suggestQuery, "2.0");
-
-                    expect(suggestQuery).to.deep.equal({
-                        search: "test",
-                        orderBy: "doesnot matter what is in here",
-                    });
-                });
+                
             });
         });
     });
