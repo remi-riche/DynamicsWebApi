@@ -210,6 +210,7 @@ const dataStubs = {
         "@odata.context": "context",
         value: Buffer.from("micsWebApi!", "utf-8").toString("base64"),
     } as Record<string, any>,
+    //this result gets combined with another one
     suggestMultiple: {
         querycontext: null,
         value: [
@@ -229,6 +230,48 @@ const dataStubs = {
             },
         ],
     } as Record<string, any>,
+    suggestMultipleV1: {
+        querycontext: null,
+        value: [
+            {
+                text: "{crmhit}test{/crmhit}",
+                document: {
+                    "@search.entityname": "lead",
+                    name: "test",
+                },
+            },
+            {
+                text: "{crmhit}test{/crmhit}2",
+                document: {
+                    "@search.entityname": "lead",
+                    name: "test2",
+                },
+            },
+        ],
+    } as Record<string, any>,
+    suggestMultipleV2: {
+        response: {
+            Error: null,
+            QueryContext: null,
+            Value: [
+                {
+                    Text: "{crmhit}test{/crmhit}",
+                    Document: {
+                        "@search.entityname": "lead",
+                        name: "test",
+                    },
+                },
+                {
+                    Text: "{crmhit}test{/crmhit}2",
+                    Document: {
+                        "@search.entityname": "lead",
+                        name: "test2",
+                    },
+                },
+            ],
+        },
+    } as SuggestResponse,
+    //this result gets combined with another one
     searchMultiple: {
         querycontext: null,
         value: [
@@ -252,9 +295,70 @@ const dataStubs = {
         facets: {},
         totalrecordcount: -1,
     } as Record<string, any>,
+    searchMultipleV1: {
+        querycontext: null,
+        value: [
+            {
+                "@search.score": 25,
+                "@search.highlights": {
+                    name: ["{crmhit}test{/crmhit}"],
+                },
+                name: "name1",
+                statecode: ["Active"],
+            },
+            {
+                "@search.score": 22,
+                "@search.highlights": {
+                    name: ["{crmhit}test{/crmhit}"],
+                },
+                name: "name2",
+                statecode: ["Active"],
+            },
+        ],
+        facets: {},
+        totalrecordcount: -1,
+    } as Record<string, any>,
+    searchMultipleV2: {
+        response: {
+            Error: null,
+            QueryContext: null,
+            Value: [
+                {
+                    "@search.score": 25,
+                    "@search.highlights": {
+                        name: ["{crmhit}test{/crmhit}"],
+                    },
+                    name: "name1",
+                    statecode: ["Active"],
+                },
+                {
+                    "@search.score": 22,
+                    "@search.highlights": {
+                        name: ["{crmhit}test{/crmhit}"],
+                    },
+                    name: "name2",
+                    statecode: ["Active"],
+                },
+            ],
+            Facets: {},
+            Count: -1,
+        },
+    } as Record<string, any>,
+    //this result gets combined with another one
     autocompleteResult: {
         querycontext: null,
         value: "{crmhit}test{/crmhit}",
+    } as Record<string, any>,
+    autocompleteResultV1: {
+        querycontext: null,
+        value: "{crmhit}test{/crmhit}",
+    } as Record<string, any>,
+    autocompleteResultV2: {
+        response: {
+            Error: null,
+            Value: "{crmhit}test{/crmhit}",
+            QueryContext: null,
+        },
     } as Record<string, any>,
     error: {
         error: {
@@ -1496,11 +1600,31 @@ const responseStubs = {
             response: JSON.stringify(v2),
         };
 
-        dataStubs.searchMultiple.response = v2;
+        dataStubs.searchMultiple.response = { ...v2 };
 
         return {
             status: 200,
             responseText: JSON.stringify(v1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
+    },
+    searchMultipleV1: function () {
+        return {
+            status: 200,
+            responseText: JSON.stringify(dataStubs.searchMultipleV1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
+    },
+    searchMultipleV2: function () {
+        const result = {
+            response: JSON.stringify(dataStubs.searchMultipleV2.response),
+        };
+
+        dataStubs.searchMultiple.response = { ...dataStubs.searchMultipleV2.response };
+
+        return {
+            status: 200,
+            responseText: JSON.stringify(result),
             responseHeaders: dataStubs.defaultResponseHeaders,
         };
     },
@@ -1533,6 +1657,36 @@ const responseStubs = {
             responseHeaders: dataStubs.defaultResponseHeaders,
         };
     },
+    suggestMultipleV1: function () {
+        return {
+            status: 200,
+            responseText: JSON.stringify(dataStubs.suggestMultipleV1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
+    },
+    suggestMultipleV2: function () {
+        const result = {
+            response: JSON.stringify(dataStubs.suggestMultipleV2.response),
+        };
+
+        //populating missing values for v2
+        const v2 = JSON.parse(JSON.stringify(dataStubs.suggestMultipleV2.response)) as SuggestResponse["response"];
+        v2.Value.forEach((item, i) => {
+            item.document = item.Document;
+            item.text = item.Text;
+
+            dataStubs.suggestMultiple.value[i].document = item.Document;
+            dataStubs.suggestMultiple.value[i].text = item.Text;
+        });
+
+        dataStubs.suggestMultiple.response = v2;
+
+        return {
+            status: 200,
+            responseText: JSON.stringify(result),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
+    },
     autocompleteResult: function () {
         const v2: AutocompleteResponse["response"] = {
             Error: null,
@@ -1549,6 +1703,28 @@ const responseStubs = {
         return {
             status: 200,
             responseText: JSON.stringify(v1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
+    },
+
+    autocompleteResultV1: function () {
+        return {
+            status: 200,
+            responseText: JSON.stringify(dataStubs.autocompleteResultV1),
+            responseHeaders: dataStubs.defaultResponseHeaders,
+        };
+    },
+
+    autocompleteResultV2: function () {
+        const result = {
+            response: JSON.stringify(dataStubs.autocompleteResultV2.response),
+        };
+
+        dataStubs.autocompleteResult.response = { ...dataStubs.autocompleteResultV2.response };
+
+        return {
+            status: 200,
+            responseText: JSON.stringify(result),
             responseHeaders: dataStubs.defaultResponseHeaders,
         };
     },

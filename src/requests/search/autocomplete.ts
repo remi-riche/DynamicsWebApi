@@ -5,7 +5,7 @@ import { ErrorHelper } from "../../helpers/ErrorHelper";
 import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
 import { convertSearchQuery } from "./convertSearchQuery";
-import { parseAutocompleteResponse } from "./parsers/parseAutocompleteResponse";
+import { parseAutocompleteResponse } from "./responseParsers/parseAutocompleteResponse";
 
 const FUNCTION_NAME = "autocomplete";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;

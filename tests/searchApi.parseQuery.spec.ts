@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { parseQueryResponse, type QueryResponseInternal } from "../src/requests/search/parsers/parseQueryResponse";
-import { parseSuggestResponse, type SuggestResponseInternal } from "../src/requests/search/parsers/parseSuggestResponse";
-import { type AutocompleteResponseInternal, parseAutocompleteResponse } from "../src/requests/search/parsers/parseAutocompleteResponse";
+import { parseQueryResponse, type QueryResponseInternal } from "../src/requests/search/responseParsers/parseQueryResponse";
+import { parseSuggestResponse, type SuggestResponseInternal } from "../src/requests/search/responseParsers/parseSuggestResponse";
+import { type AutocompleteResponseInternal, parseAutocompleteResponse } from "../src/requests/search/responseParsers/parseAutocompleteResponse";
 import type { AutocompleteResponse, QueryResponse, SuggestResponse } from "../src/dynamics-web-api";
 
 describe("parseQueryResponse", () => {

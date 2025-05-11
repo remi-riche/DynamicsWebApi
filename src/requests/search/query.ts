@@ -5,7 +5,7 @@ import { ErrorHelper } from "../../helpers/ErrorHelper";
 import { InternalRequest } from "../../types";
 import { LIBRARY_NAME } from "../constants";
 import { convertSearchQuery } from "./convertSearchQuery";
-import { parseQueryResponse } from "./parsers/parseQueryResponse";
+import { parseQueryResponse } from "./responseParsers/parseQueryResponse";
 
 const FUNCTION_NAME = "query";
 const REQUEST_NAME = `${LIBRARY_NAME}.${FUNCTION_NAME}`;

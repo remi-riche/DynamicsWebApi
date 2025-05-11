@@ -12,6 +12,7 @@ const apiConfigs: ApiType[] = ["dataApi", "searchApi", "serviceApi"];
 export interface InternalApiConfig extends ApiConfig {
     url: string;
     escapeSpecialCharacters?: boolean;
+    disableSearchApiResponseCompatibility?: boolean;
 }
 
 export interface InternalConfig extends Config {
@@ -44,6 +45,11 @@ const mergeSearchApiOptions = (internalApiConfig: InternalApiConfig, options: Se
     if (options.escapeSpecialCharacters != null) {
         ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
         internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
+    }
+
+    if (options.disableResponseCompatibility != null) {
+        ErrorHelper.boolParameterCheck(options.disableResponseCompatibility, FUNCTION_NAME, `config.searchApi.options.disableResponseCompatibility`);
+        internalApiConfig.disableSearchApiResponseCompatibility = options.disableResponseCompatibility;
     }
 };
 

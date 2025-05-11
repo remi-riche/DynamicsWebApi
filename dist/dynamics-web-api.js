@@ -909,6 +909,10 @@ var _dynamicsWebApiExports = (() => {
       ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
       internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
     }
+    if (options.disableResponseCompatibility != null) {
+      ErrorHelper.boolParameterCheck(options.disableResponseCompatibility, FUNCTION_NAME, `config.searchApi.options.disableResponseCompatibility`);
+      internalApiConfig.disableSearchApiResponseCompatibility = options.disableResponseCompatibility;
+    }
   };
   var mergeApiConfig = (internalConfig, apiType, config) => {
     const internalApiConfig = internalConfig[apiType];
@@ -2666,31 +2670,37 @@ ${processData(internalRequest.data, config)}`);
   }
   var specialProperties = ["orderBy", "facets"];
 
-  // src/requests/search/parsers/parseQueryResponse.ts
+  // src/requests/search/responseParsers/parseQueryResponse.ts
   function parseQueryResponse(queryResponse, config) {
     if (!queryResponse) return queryResponse;
     const toV1 = () => {
       const responseValue = JSON.parse(queryResponse.response, dateReviver);
-      return {
+      const toReturn = {
         ...queryResponse,
-        value: responseValue.Value,
-        facets: responseValue.Facets,
-        totalrecordcount: responseValue.Count,
-        querycontext: responseValue.QueryContext,
         response: responseValue
       };
+      if (!config.disableSearchApiResponseCompatibility) {
+        toReturn.value = responseValue.Value;
+        toReturn.facets = responseValue.Facets;
+        toReturn.totalrecordcount = responseValue.Count;
+        toReturn.querycontext = responseValue.QueryContext;
+      }
+      return toReturn;
     };
     const toV2 = () => {
-      return {
-        ...queryResponse,
-        response: {
+      const toReturn = {
+        ...queryResponse
+      };
+      if (!config.disableSearchApiResponseCompatibility) {
+        toReturn.response = {
           Count: queryResponse.totalrecordcount,
           Value: queryResponse.value,
           Facets: queryResponse.facets,
           QueryContext: queryResponse.querycontext,
           Error: null
-        }
-      };
+        };
+      }
+      return toReturn;
     };
     return config?.version === "2.0" ? toV1() : toV2();
   }
@@ -2720,35 +2730,45 @@ ${processData(internalRequest.data, config)}`);
   init_Utility();
   init_ErrorHelper();
 
-  // src/requests/search/parsers/parseSuggestResponse.ts
+  // src/requests/search/responseParsers/parseSuggestResponse.ts
   function parseSuggestResponse(queryResponse, config) {
     if (!queryResponse) return queryResponse;
     const toV1 = () => {
       const responseValue = JSON.parse(queryResponse.response, dateReviver);
-      responseValue.Value?.forEach((item) => {
-        item.document = item.Document;
-        item.text = item.Text;
-      });
-      return {
+      if (!config.disableSearchApiResponseCompatibility) {
+        responseValue.Value?.forEach((item) => {
+          item.document = item.Document;
+          item.text = item.Text;
+        });
+      }
+      const toReturn = {
         ...queryResponse,
-        value: responseValue.Value,
-        querycontext: responseValue.QueryContext,
         response: responseValue
       };
+      if (!config.disableSearchApiResponseCompatibility) {
+        toReturn.value = responseValue.Value;
+        toReturn.querycontext = responseValue.QueryContext;
+      }
+      return toReturn;
     };
     const toV2 = () => {
-      queryResponse.value?.forEach((item) => {
-        item.Document = item.document;
-        item.Text = item.text;
-      });
-      return {
-        ...queryResponse,
-        response: {
+      if (!config.disableSearchApiResponseCompatibility) {
+        queryResponse.value?.forEach((item) => {
+          item.Document = item.document;
+          item.Text = item.text;
+        });
+      }
+      const toReturn = {
+        ...queryResponse
+      };
+      if (!config.disableSearchApiResponseCompatibility) {
+        toReturn.response = {
           Value: queryResponse.value,
           QueryContext: queryResponse.querycontext,
           Error: null
-        }
-      };
+        };
+      }
+      return toReturn;
     };
     return config?.version === "2.0" ? toV1() : toV2();
   }
@@ -2777,27 +2797,33 @@ ${processData(internalRequest.data, config)}`);
   init_Utility();
   init_ErrorHelper();
 
-  // src/requests/search/parsers/parseAutocompleteResponse.ts
+  // src/requests/search/responseParsers/parseAutocompleteResponse.ts
   function parseAutocompleteResponse(queryResponse, config) {
     if (!queryResponse) return queryResponse;
     const toV1 = () => {
       const responseValue = JSON.parse(queryResponse.response, dateReviver);
-      return {
+      const toReturn = {
         ...queryResponse,
-        value: responseValue.Value,
-        querycontext: responseValue.QueryContext,
         response: responseValue
       };
+      if (!config.disableSearchApiResponseCompatibility) {
+        toReturn.value = responseValue.Value;
+        toReturn.querycontext = responseValue.QueryContext;
+      }
+      return toReturn;
     };
     const toV2 = () => {
-      return {
-        ...queryResponse,
-        response: {
+      const toReturn = {
+        ...queryResponse
+      };
+      if (!config.disableSearchApiResponseCompatibility) {
+        toReturn.response = {
           Value: queryResponse.value,
           QueryContext: queryResponse.querycontext,
           Error: null
-        }
-      };
+        };
+      }
+      return toReturn;
     };
     return config?.version === "2.0" ? toV1() : toV2();
   }

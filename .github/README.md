@@ -340,7 +340,8 @@ Both `dataApi` and `searchApi` can be omitted from a configuration. Their defaul
 **SearchApiOptions** properties:
 | Property Name | Type | Description |
 |--------|--------|--------|
-| escapeSpecialCharacters | `boolean` | **Works only with Search API 2.0**. Optional. Escapes special characters in the search string. |
+| escapeSpecialCharacters | `boolean` | `v2.3.0+` **Works only with Search API 2.0**. Optional. Escapes special characters in the search string. |
+| disableResponseCompatibility | `boolean` | `v2.3.0+`. Disables forced compatibility of the responses between v1 and v2. It's highly recommended to enable this option, because all response properties are duplicated by default for compatibility reasons. |
 
 ## Request Examples
 

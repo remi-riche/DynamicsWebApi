@@ -983,8 +983,16 @@ export interface AutocompleteRequest extends BaseRequest {
     query: Autocomplete;
 }
 export type SearchApiOptions = {
-    /**Escapes the search string. Special characters that require escaping include the following: + - & | ! ( ) { } [ ] ^ " ~ * ? : \ /. */
+    /**
+     * Escapes the search string.
+     * Special characters that require escaping include the following: + - & | ! ( ) { } [ ] ^ " ~ * ? : \ /.
+     */
     escapeSpecialCharacters?: boolean;
+    /**
+     * Disables compatibility of the responses between v1 and v2.
+     * Enabling this option is highly recommended, because all response properties are duplicated by default for compatibility reasons.
+     */
+    disableResponseCompatibility?: boolean;
 };
 export interface ApiConfig<TOptions = any> {
     /** API Version to use, for example: "9.2" or "1.0". */
