@@ -31,6 +31,7 @@ Browser-compiled script and type definitions can be found in a v2 [dist](https:/
 - **Abort Signal and Abort Controller** (Browser and Node.js 15+). Abort requests when they are no longer need to be completed.
 - **Node.js and a Browser** support.
 - **Proxy Configuration** support.
+- **Background Operations** support. `v2.3.0+`
 - Works with **Microsoft Power Pages** (aka Microsoft Portal). `v2.1.0+`
 
 ***
@@ -2198,6 +2199,9 @@ _Examples below follow Microsoft's official documenation._
 > [!NOTE]
 > All request properties are `camelCase`, even though in Dataverse Search API v2.0 they are lowercase.
 
+> [!TIP]
+> All objects in requests and responses are automatically converted and encoded as necessary (per official documentation), simplifying developer's work to construct the request and process the response.
+
 ### Query
 
 The following table describes all parameters for a `query` request:
@@ -2299,9 +2303,6 @@ if (!error && value.length) {
 }
 ```
 
-As you can see all objects are automatically converted and encoded as per official documentation, simplifying developer's
-work to construct the request and to process the response.
-
 ### Suggest
 
 The following table describes all parameters for a `suggest` request:
@@ -2397,12 +2398,12 @@ fuzzy | `boolean` | Use fuzzy search to aid with misspellings. The default is fa
 ```ts
 let result = await dynamicsWebApi.autocomplete({
     query: {
-        search: "mar"
+        search: "Con"
     }
 });
 
 //it's similar to:
-result = await dynamicsWebApi.autocomplete("mar");
+result = await dynamicsWebApi.autocomplete("Con");
 
 //all data for v2 is returned inside the "response" property
 const { Value: value, Error: error } = result.response;
@@ -2413,7 +2414,7 @@ const { Value: value, Error: error } = result.response;
 
 const result = await dynamicsWebApi.autocomplete({
     query: {
-        search: "tes",
+        search: "Con",
         entities: [{
             name: "account",
             selectColumns: ["name", "createdon"],
@@ -2815,33 +2816,33 @@ This will work __only__ if you import the library like this: `import { DynamicsW
 ### In Progress / Feature List
 
 - [X] Overloaded functions with rich request options for all Web API operations.
-- [X] Get all pages requests, such as: countAll, retrieveMultipleAll, fetchXmlAll and etc. `Implemented in v.1.2.5`
+- [X] Get all pages requests, such as: countAll, retrieveMultipleAll, fetchXmlAll and etc. `Implemented in v1.2.5`
 - [X] Web API requests that have long URL (more than 2000 characters) should be automatically converted to batch requests. 
-Feature is very convenient for big Fetch XMLs. `Implemented in v.1.2.8`
+Feature is very convenient for big Fetch XMLs. `Implemented in v1.2.8`
 - [X] "Formatted" values in responses. For instance: Web API splits information about lookup fields into separate properties, 
 the config option "formatted" will enable developers to retrieve all information about such fields in a single requests and access it through DynamicsWebApi custom response objects.
-- [X] Simplified names for "Formatted" properties. `Implemented in v.1.3.0`
-- [X] RUD operations using Alternate Keys. `Implemented in v.1.3.4`
-- [X] Duplicate Detection for Web API v.9.0. `Implemented in v.1.3.4`
-- [X] Ability to use entity names instead of collection names. `Implemented in v.1.4.0`
-- [X] Entity and Attribute Metadata helpers. `Implemented in v.1.4.3`
-- [X] Entity Relationships and Global Option Sets helpers. `Implemented in v.1.4.6`
-- [X] Batch requests. `Implemented in v.1.5.0`
-- [X] TypeScript declaration files `d.ts` `Added in v.1.5.3`
-- [X] Implement `Content-ID` header to reference a request in a Change Set in a batch operation `Added in v.1.5.6`
-- [X] Change Tracking `Added in v.1.5.11`
+- [X] Simplified names for "Formatted" properties. `Implemented in v1.3.0`
+- [X] RUD operations using Alternate Keys. `Implemented in v1.3.4`
+- [X] Duplicate Detection for Web API v.9.0. `Implemented in v1.3.4`
+- [X] Ability to use entity names instead of collection names. `Implemented in v1.4.0`
+- [X] Entity and Attribute Metadata helpers. `Implemented in v1.4.3`
+- [X] Entity Relationships and Global Option Sets helpers. `Implemented in v1.4.6`
+- [X] Batch requests. `Implemented in v1.5.0`
+- [X] TypeScript declaration files `d.ts` `Added in v1.5.3`
+- [X] Implement `Content-ID` header to reference a request in a Change Set in a batch operation `Added in v1.5.6`
+- [X] Change Tracking `Added in v1.5.11`
 - [X] Support for Aggregate and Grouping results `Added in v1.6.4`
 - [X] Support for Timeout option in the configuration `Added in v1.6.10`
-- [X] Impersonate a user based on their Azure Active Directory (AAD) object id. `Added in v.1.6.12`
-- [X] File upload/download/delete for a File Field. `Added in v.1.7.0`
-- [X] Full proxy support. `Added in v.1.7.2`
-- [X] Refactoring and conversion to TypeScript. `Added in v.2.0.0`
-- [X] Implement [Dataverse Search API 1.0](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/legacy). `Added in v.2.0.0`
-- [X] Allow custom headers to be passed to the request [#151](https://github.com/AleksandrRogov/DynamicsWebApi/issues/151). `Added in v.2.1.0`
-- [X] Support Microsoft Power Pages. `Added in v.2.1.0`
-- [X] Background Operations for custom actions. `Added in v.2.3.0`
-- [X] Support Search API 2.0 [#174](https://github.com/AleksandrRogov/DynamicsWebApi/issues/174). `Added in v.2.3.0`
-- [ ] Support for the [session token](https://learn.microsoft.com/en-ca/power-apps/developer/data-platform/use-elastic-tables?tabs=webapi#work-with-the-session-token). `Coming in v.2.3.1`
+- [X] Impersonate a user based on their Azure Active Directory (AAD) object id. `Added in v1.6.12`
+- [X] File upload/download/delete for a File Field. `Added in v1.7.0`
+- [X] Full proxy support. `Added in v1.7.2`
+- [X] Refactoring and conversion to TypeScript. `Added in v2.0.0`
+- [X] Implement [Dataverse Search API 1.0](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/legacy). `Added in v2.0.0`
+- [X] Allow custom headers to be passed to the request [#151](https://github.com/AleksandrRogov/DynamicsWebApi/issues/151). `Added in v2.1.0`
+- [X] Support Microsoft Power Pages. `Added in v2.1.0`
+- [X] Background Operations for custom actions. `Added in v2.3.0`
+- [X] Support Search API 2.0 [#174](https://github.com/AleksandrRogov/DynamicsWebApi/issues/174). `Added in v2.3.0`
+- [ ] [Session token](https://learn.microsoft.com/en-ca/power-apps/developer/data-platform/use-elastic-tables?tabs=webapi#work-with-the-session-token) support. `Coming in v2.3.1`
 - [ ] Custom requests.
 
 Many more features to come!
