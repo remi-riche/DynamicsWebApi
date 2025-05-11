@@ -115,7 +115,7 @@ v2 breaking changes are [here](/.github/BREAKING_CHANGES_V2.md). List of new fea
     * [Download file](#download-file)
     * [Delete file](#delete-file)
 * [Work with Dataverse Search API](#work-with-dataverse-search-api)
-    * [Search](#search)
+    * [Query (previosly known as Search)](#query)
     * [Suggest](#suggest)
     * [Autocomplete](#autocomplete)
 * [Retrieve CSDL $metadata document](#retrieve-csdl-metadata-document)
@@ -295,11 +295,11 @@ serverUrl | `string` | The url to Dataverse API server, for example: https://con
 timeout | `number` | Sets a number of milliseconds before a request times out.
 useEntityNames | `boolean` | Indicates whether to use entity logical names instead of collection logical names during requests.
 
-**Note!**
-`serverUrl` and `onTokenRefresh` are required when DynamicsWebApi is used in a Node.js application.
+> [!NOTE]
+> `serverUrl` and `onTokenRefresh` are required when DynamicsWebApi is used in a Node.js application.
 
-**Important!** 
-If you are using `DynamicsWebApi` **outside Microsoft Dynamics 365** and set `useEntityNames` to `true` **the first request** to Web Api will fetch `LogicalCollectionName` and `LogicalName` from `EntityMetadata` for all entities. It does not happen when `DynamicsWebApi` is used in Microsoft Dynamics 365 Web Resources (there is no additional request, no impact on perfomance).
+> [!IMPORTANT]
+> If you are using `DynamicsWebApi` **outside Microsoft Dynamics 365** and set `useEntityNames` to `true` **the first request** to Web Api will fetch `LogicalCollectionName` and `LogicalName` from `EntityMetadata` for all entities. It does not happen when `DynamicsWebApi` is used in Microsoft Dynamics 365 Web Resources (there is no additional request, no impact on perfomance).
 
 **ApiConfig** Properties:
 
@@ -348,8 +348,9 @@ Please use [DynamicsWebApi Wiki](../../../wiki/) for an object reference. It is 
 
 The following table describes all __possible__ properties that can be set in a `request` object. Some parameters may still be absent in a table, please refer to [DynamicsWebApi Wiki](../../../wiki/).
 
-__Please note!__ Not all operations accept all properties and if 
-by mistake an invalid property has been specified you will receive either an error saying that the request is invalid or the response will not have expected results.
+> [!NOTE]
+> Not all operations accept all properties and if by mistake an invalid property has been specified
+> you will receive either an error saying that the request is invalid or the response will not have expected results.
 
 Property Name | Type | Operation(s) Supported | Description
 ------------ | ------------- | ------------- | -------------
@@ -420,7 +421,8 @@ top | `number` | Limit the number of results returned by using the $top system q
 All requests to Web API that have long URLs (more than 2000 characters) are automatically converted to a Batch Request.
 This feature is very convenient when you make a call with big Fetch XMLs. No special parameters needed to do a convertation.
 
-**Heads up!** This feature may cause an issue in Microsoft Power Pages because Batch Requests are not supported there out of the box. Please keep your requests short :)
+> [!NOTE]
+> This feature may cause an issue in Microsoft Power Pages because Batch Requests are not supported there out of the box. Please keep your requests short :)
 
 ### Create a table row
 
@@ -755,7 +757,8 @@ const records = response.value;
 
 It is possible to count records separately from RetrieveMultiple call. In order to do that use the following snippet:
 
-**IMPORTANT!** The count value does not represent the total number of entities in the system. It is limited by the maximum number of entities that can be returned.
+> [!IMPORTANT]
+> The count value does not represent the total number of entities in the system. It is limited by the maximum number of entities that can be returned.
 
 ```ts
 const count = await dynamicsWebApi.count({ 
@@ -1069,13 +1072,15 @@ await dynamicsWebApi.callAction(actionRequest);
 
 Batch Operations bundle multiple requests into a single one and have the following advantages:
 
-* Reduces a number of requests sent to the Web API server. `Each user is allowed up to 60,000 API requests, per organization instance, within five minute sliding interval.` [More Info](https://docs.microsoft.com/en-us/dynamics365/customer-engagement/developer/api-limits)
+* Reduces a number of requests sent to the Web API server. `Each user is allowed up to 6,000 API requests, per organization instance, within 5-minute sliding window.` [More Info](https://docs.microsoft.com/en-us/dynamics365/customer-engagement/developer/api-limits)
 * Provides a way to run multiple operations in a single transaction. If any operation that changes data (within a single changeset) fails all completed ones will be rolled back.
 * All operations within a batch request run consequently (FIFO).
 
 DynamicsWebApi provides a straightforward way to execute Batch Operations which may not always be simple to compose.
 
-**Please Note!** By default, all operations that modify data, such as: CREATE, UPDATE, UPSERT, PUT and DELETE - are automatically made atomic (combined in Change Sets). You can change this behaviour by setting `inChangeSet` to `false`. [More Info](#controlling-change-sets)
+> [!NOTE]
+> By default, all operations that modify data, such as: CREATE, UPDATE, UPSERT, PUT and DELETE - are automatically made atomic (combined in Change Sets).
+> You can change this behaviour by setting `inChangeSet` to `false`. [More Info](#controlling-change-sets)
 
 The following example bundles 2 retrieve multiple operations and an update:
 
@@ -1165,7 +1170,8 @@ const salesorderId = responses[0];
 
 Note that if you are making a request to a navigation property (`collection: "customerid_contact"`), the request won't have a response, it is an OOTB Web API limitation.
 
-**Important!** DynamicsWebApi automatically assigns value to a `Content-ID` if it is not provided, therefore, please set your `Content-ID` value less than 100000.
+> [!IMPORTANT]
+> DynamicsWebApi automatically assigns value to a `Content-ID` if it is not provided, therefore, please set your `Content-ID` value less than 100000.
 
 ### Use Content-ID inside a request payload
 
@@ -1203,7 +1209,9 @@ As mentioned before, by default, all operations that modify data: CREATE, UPDATE
 
 In some cases this can be an undesirable behaviour and with v2 there are several ways to make those operations non-atomic: per batch operation and per request. Let's use a code sample above and make **all** operations non-atomic. It can be done by setting `inChangeSet` property to `false`.
 
-**Important!** `contentId` can **only** be used inside the Change Sets. Any `contentId` set in a request won't be included in a non-atomic batch operation! If `$1` parameter was used outside of Change Set you will get an error similar to the following: `Error identified in Payload provided by the user for Entity :'<entity name>'`.
+> [!IMPORTANT]
+> `contentId` can **only** be used inside the Change Sets. Any `contentId` set in a request won't be included in a non-atomic batch operation!
+> If `$1` parameter was used outside of Change Set you will get an error similar to the following: `Error identified in Payload provided by the user for Entity :'<entity name>'`.
 
 **Per batch operation:**
 
@@ -1278,7 +1286,9 @@ const responses = await dynamicsWebApi.executeBatch();
 
 The first two requests will be atomic (included in a Change Set) and the last one will be executed separately. So, if for some reason, there was an error during creation of an Email record, the whole operation won't be rolled back and the Contact and Order records will be created in the system.
 
-**Be extra careful** with an order of requests in a Batch Operation, especially if it has a combination of atomic and non-atomic operations in it. For example, if in an example above we move the creation of an Email record above Order - it will create 2 separate change sets for the Contact and for the Order records.
+> [!IMPORTANT]
+> **Be extra careful** with an order of requests in a Batch Operation, especially if it has a combination of atomic and non-atomic operations in it.
+> For example, if in an example above we move the creation of an Email record above Order - it will create 2 separate change sets for the Contact and for the Order records.
 
 ```ts
 dynamicsWebApi.startBatch();
@@ -1477,7 +1487,8 @@ const schemaName = entityMetadata.SchemaName;
 
 Microsoft recommends to make changes in the entity metadata that has been priorly retrieved to avoid any mistake. I would also recommend to read information about **MSCRM.MergeLabels** header prior updating metadata. More information about the header can be found [here](https://msdn.microsoft.com/en-us/library/mt593078.aspx#Anchor_2).
 
-**Important!** Make sure you set **`MetadataId`** property when you update the metadata, DynamicsWebApi uses it as a primary key for the EntityDefinition record.
+> [!IMPORTANT]
+> Make sure you set **`MetadataId`** property when you update the metadata, DynamicsWebApi uses it as a primary key for the EntityDefinition record.
 
 ```ts
 const entityKey = "LogicalName='new_accountname'";
@@ -1488,7 +1499,8 @@ entityMetadata.DispalyName.LocalizedLabels[0].Label = "New Bank Account";
 await dynamicsWebApi.updateEntity({ data: entityMetadata });
 ```
 
-**Important!** When you update a table definition, you must publish your changes. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/model-driven-apps/publish-customizations). In our case we need to do an additional request to publish changes:
+> [!IMPORTANT]
+> When you update a table definition, you must publish your changes. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/model-driven-apps/publish-customizations). In our case we need to do an additional request to publish changes:
 
 ```ts
 await dynamicsWebApi.callAction({
@@ -1593,7 +1605,8 @@ const schemaName = attributeMetadata.SchemaName;
 
 ### Update Columns
 
-**Important!** Make sure you set **`MetadataId`** property when you update the metadata, DynamicsWebApi use it as a primary key for the EntityDefinition record.
+> [!IMPORTANT]
+> Make sure you set **`MetadataId`** property when you update the metadata, DynamicsWebApi use it as a primary key for the EntityDefinition record.
 
 The following example will update only common properties availible in [AttributeMetadata](https://msdn.microsoft.com/en-us/library/mt607551.aspx) entity. If you need to update specific properties of Attributes with type that inherit from the AttributeMetadata you will need to cast the attribute to the specific type. [More Info](https://msdn.microsoft.com/en-us/library/mt607522.aspx#Anchor_4)
 
@@ -1634,9 +1647,11 @@ await dynamicsWebApi.updateAttribute({
 });
 ```
 
-**Important!** Make sure you include the attribute type in the update function as well.
+> [!IMPORTANT]
+> Make sure you include the attribute type in the update function as well.
 
-**Important!** When you update an attribute, you must publish changes in CRM. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/model-driven-apps/publish-customizations)
+> [!IMPORTANT]
+> When you update an attribute, you must publish changes in CRM. [More Info](https://learn.microsoft.com/en-us/power-apps/developer/model-driven-apps/publish-customizations)
 
 ### Retrieve Multiple Columns
 
@@ -1818,7 +1833,8 @@ const relationshipId = await dynamicsWebApi.createRelationship({ data: newRelati
 ```
 ### Update Relationship
 
-**Important!** Make sure you set **`MetadataId`** property when you update the metadata, DynamicsWebApi use it as a primary key for the EntityDefinition record.
+> [!IMPORTANT]
+> Make sure you set **`MetadataId`** property when you update the metadata, DynamicsWebApi use it as a primary key for the EntityDefinition record.
 
 ```ts
 const metadataId = "10cb680e-b6a7-e811-816a-480fcfe97e21";
@@ -2025,7 +2041,8 @@ const id = await dynamicsWebApi.createGlobalOptionSet({
 
 ### Update Global Option Set
 
-**Important!** Publish your changes after update, otherwise a label won't be modified.
+> [!IMPORTANT]
+> Publish your changes after update, otherwise a label won't be modified.
 
 ```ts
 let key = "6e133d25-abd1-e811-816e-480fcfeab9c1";
@@ -2164,7 +2181,12 @@ const isDeleted = await dynamicsWebApi.deleteRecord({
 
 DynamicsWebApi can be used to call Dataverse Search API and utilize its powerful Query, Suggest and Autocomplete capabilities. Before using, I highly recommend to get familiar with it by reading an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/overview?tabs=webapi).
 
-**Important!** This documentation is based on the Dataverse Search API v2.0 (added in `v2.3.0`). If you would like to find documentation for v1.0, please check [here](https://github.com/AleksandrRogov/DynamicsWebApi/blob/v2.2.1/.github/README.md#work-with-dataverse-search-api). Just keep in mind, that some properties in the request and response objects are marked as deprecated to encourage usage of the v2.0 properties. Deprecated properties and requests will be removed in the next major version.
+> [!IMPORTANT]
+> This documentation is based on the Dataverse Search API v2.0 (added in `v2.3.0`).
+> If you would like to find documentation for v1.0, please check [here](https://github.com/AleksandrRogov/DynamicsWebApi/blob/v2.2.1/.github/README.md#work-with-dataverse-search-api).
+> Just keep in mind, that some properties in the request and response objects are marked as deprecated to encourage usage of the v2.0 properties.
+> 
+> Deprecated properties and requests will be removed in the next major version.
 
 To set a Search API version use: `new DynamicsWebApi({ searchApi: { version: "2.0" }})`.
 
@@ -2172,7 +2194,8 @@ All functions: Query, Suggest and Autocomplete, - can be called with a single `s
 
 _Examples below follow Microsoft's official documenation._
 
-**Note!** All request properties are `camelCase`, even though in Dataverse Search API v2.0 they are lowercase.
+> [!NOTE]
+> All request properties are `camelCase`, even though in Dataverse Search API v2.0 they are lowercase.
 
 ### Query
 
@@ -2349,13 +2372,14 @@ const result = await dynamicsWebApi.suggest({
 
 ### Autocomplete
 
-> [!WARNING] 
+> [!WARNING]
 > **Checked: May 11th, 2025.**
 > Something is wrong with this Search API endpoint. Does not matter what requests are done, I always get an error:
 >
 > `Invalid expression: Unsupported function call: search.ismatchscoring. This function is only supported in the Search API. Parameter name: $filter.`
 >
-This looks like and ootb issue, they are using an unsupported operator `search.ismatchscoring` in a [Search Service's Autocomplete query](https://learn.microsoft.com/en-us/azure/search/search-query-odata-full-text-search-functions) function. Let me know if this gets resolved, I will remove the warning.
+> This looks like and ootb issue, they are using an unsupported operator `search.ismatchscoring` in a [Search Service's Autocomplete query](https://learn.microsoft.com/en-us/azure/search/search-query-odata-full-text-search-functions) function.
+> Let me know if this gets resolved, I will remove the warning.
 >
 > P.S. Neither v1, v2 nor `searchautocomplete` action are working.
 
@@ -2427,9 +2451,10 @@ The `csdlDocument` will be the type of `string`. DynamicsWebApi does not parse t
 
 `v2.3.0+`
 
-**Note!** This feature is still in **preview** in the Dataverse (checked: May 4th, 2025). I would also recommend to get familiar with an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/background-operations?tabs=webapi).
+> [!NOTE]
+> This feature is still in **preview** in the Dataverse (checked: May 4th, 2025). I would also recommend to get familiar with an [official documentation](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/background-operations?tabs=webapi).
 
-_Use background operations to send requests that Dataverse processes asynchronously. Background operations are useful when you don't want to maintain a connection while a request runs._
+> Use background operations to send requests that Dataverse processes asynchronously. Background operations are useful when you don't want to maintain a connection while a request runs.
 
 This feature currently works with **custom api actions only**.
 
@@ -2454,7 +2479,8 @@ const backgroundOperationId = response.backgroundOperationId;
 ### Check the status
 The status of a background operation can be checked in 2 ways: by querying a `backgroundoperations` table or by polling the status monitor resource.
 
-**Note!** Status Monitor is NOT a Dataverse Web API and therefore has a different behavior and is not going to be available in the Power Pages.
+> [!NOTE]
+> Status Monitor is NOT a Dataverse Web API and therefore has a different behavior and is not going to be available in the Power Pages.
 
 For example, if we take a `backgroundOperationId` from a previous example, we can get the status this way:
 
@@ -2715,7 +2741,8 @@ If you are developing CRM Web Resources with TypeScript (and are not using NPM),
 -- tsconfig.json
 ```
 
-**Important!** Make sure that you include `types` folder in your `tsconfig.json`:
+> [!IMPORTANT]
+> Make sure that you include `types` folder in your `tsconfig.json`:
 ```json
 "include": [
 	"./src/**/*",
@@ -2812,7 +2839,9 @@ the config option "formatted" will enable developers to retrieve all information
 - [X] Implement [Dataverse Search API 1.0](https://learn.microsoft.com/en-us/power-apps/developer/data-platform/search/legacy). `Added in v.2.0.0`
 - [X] Allow custom headers to be passed to the request [#151](https://github.com/AleksandrRogov/DynamicsWebApi/issues/151). `Added in v.2.1.0`
 - [X] Support Microsoft Power Pages. `Added in v.2.1.0`
-- [ ] Support Search API 2.0 [#174](https://github.com/AleksandrRogov/DynamicsWebApi/issues/174). `Coming with v.2.3.0`
+- [X] Background Operations for custom actions. `Added in v.2.3.0`
+- [X] Support Search API 2.0 [#174](https://github.com/AleksandrRogov/DynamicsWebApi/issues/174). `Added in v.2.3.0`
+- [ ] Support for the [session token](https://learn.microsoft.com/en-ca/power-apps/developer/data-platform/use-elastic-tables?tabs=webapi#work-with-the-session-token). `Coming in v.2.3.1`
 - [ ] Custom requests.
 
 Many more features to come!
