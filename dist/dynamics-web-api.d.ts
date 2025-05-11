@@ -1,4 +1,4 @@
-/*! dynamics-web-api v2.3.0-beta (c) 2025 Aleksandr Rogov. License: MIT */
+/*! dynamics-web-api v2.3.0 (c) 2025 Aleksandr Rogov. License: MIT */
 /**
  * Microsoft Dataverse Web API helper library for Node.js and Browser.
  * It is compatible with: Dataverse, Dynamics 365 (online), Dynamics 365 (on-premise), Dynamics CRM 2016, Dynamics CRM Online.
@@ -989,10 +989,10 @@ export type SearchApiOptions = {
      */
     escapeSpecialCharacters?: boolean;
     /**
-     * Disables compatibility of the responses between v1 and v2.
-     * Enabling this option is highly recommended, because all response properties are duplicated by default for compatibility reasons.
+     * Enables compatibility of the responses between v1 and v2.
+     * Only enable this option temporarily, because it will force all response properties to be duplicated to achieve a full compatibility.
      */
-    disableResponseCompatibility?: boolean;
+    enableResponseCompatibility?: boolean;
 };
 export interface ApiConfig<TOptions = any> {
     /** API Version to use, for example: "9.2" or "1.0". */

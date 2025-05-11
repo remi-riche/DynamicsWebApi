@@ -1,4 +1,4 @@
-/*! dynamics-web-api v2.3.0-beta (c) 2025 Aleksandr Rogov. License: MIT */
+/*! dynamics-web-api v2.3.0 (c) 2025 Aleksandr Rogov. License: MIT */
 "use strict";
 var _dynamicsWebApiExports = (() => {
   var __defProp = Object.defineProperty;
@@ -909,9 +909,9 @@ var _dynamicsWebApiExports = (() => {
       ErrorHelper.boolParameterCheck(options.escapeSpecialCharacters, FUNCTION_NAME, `config.searchApi.options.escapeSpecialCharacters`);
       internalApiConfig.escapeSpecialCharacters = options.escapeSpecialCharacters;
     }
-    if (options.disableResponseCompatibility != null) {
-      ErrorHelper.boolParameterCheck(options.disableResponseCompatibility, FUNCTION_NAME, `config.searchApi.options.disableResponseCompatibility`);
-      internalApiConfig.disableSearchApiResponseCompatibility = options.disableResponseCompatibility;
+    if (options.enableResponseCompatibility != null) {
+      ErrorHelper.boolParameterCheck(options.enableResponseCompatibility, FUNCTION_NAME, `config.searchApi.options.enableResponseCompatibility`);
+      internalApiConfig.enableSearchApiResponseCompatibility = options.enableResponseCompatibility;
     }
   };
   var mergeApiConfig = (internalConfig, apiType, config) => {
@@ -2679,7 +2679,7 @@ ${processData(internalRequest.data, config)}`);
         ...queryResponse,
         response: responseValue
       };
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         toReturn.value = responseValue.Value;
         toReturn.facets = responseValue.Facets;
         toReturn.totalrecordcount = responseValue.Count;
@@ -2691,7 +2691,7 @@ ${processData(internalRequest.data, config)}`);
       const toReturn = {
         ...queryResponse
       };
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         toReturn.response = {
           Count: queryResponse.totalrecordcount,
           Value: queryResponse.value,
@@ -2735,7 +2735,7 @@ ${processData(internalRequest.data, config)}`);
     if (!queryResponse) return queryResponse;
     const toV1 = () => {
       const responseValue = JSON.parse(queryResponse.response, dateReviver);
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         responseValue.Value?.forEach((item) => {
           item.document = item.Document;
           item.text = item.Text;
@@ -2745,14 +2745,14 @@ ${processData(internalRequest.data, config)}`);
         ...queryResponse,
         response: responseValue
       };
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         toReturn.value = responseValue.Value;
         toReturn.querycontext = responseValue.QueryContext;
       }
       return toReturn;
     };
     const toV2 = () => {
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         queryResponse.value?.forEach((item) => {
           item.Document = item.document;
           item.Text = item.text;
@@ -2761,7 +2761,7 @@ ${processData(internalRequest.data, config)}`);
       const toReturn = {
         ...queryResponse
       };
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         toReturn.response = {
           Value: queryResponse.value,
           QueryContext: queryResponse.querycontext,
@@ -2806,7 +2806,7 @@ ${processData(internalRequest.data, config)}`);
         ...queryResponse,
         response: responseValue
       };
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         toReturn.value = responseValue.Value;
         toReturn.querycontext = responseValue.QueryContext;
       }
@@ -2816,7 +2816,7 @@ ${processData(internalRequest.data, config)}`);
       const toReturn = {
         ...queryResponse
       };
-      if (!config.disableSearchApiResponseCompatibility) {
+      if (config.enableSearchApiResponseCompatibility) {
         toReturn.response = {
           Value: queryResponse.value,
           QueryContext: queryResponse.querycontext,
