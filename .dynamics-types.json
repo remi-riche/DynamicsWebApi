@@ -1,0 +1,28 @@
+{
+    "$schema": "./schemas/dynamics-types.schema.json",
+    "output": "./src/types/dataverse.d.ts",
+    "entities": [
+        "account",
+        "contact",
+        "opportunity",
+        "lead",
+        "incident",
+        "task",
+        "appointment",
+        "phonecall",
+        "email"
+    ],
+    "includeOptionSets": true,
+    "includeActions": true,
+    "includeRelationships": false,
+    "labelLanguage": 1033,
+    "namingConvention": "camelCase",
+    "lookupStyle": "guid",
+    "deltaCache": "./.cache/metadata-cache.json",
+    "customTypes": {
+        "money": "number",
+        "datetime": "Date",
+        "decimal": "number",
+        "bigint": "bigint"
+    }
+}

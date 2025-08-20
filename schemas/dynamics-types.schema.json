@@ -1,0 +1,135 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "DynamicsWebApi Type Generator Configuration",
+    "description": "Configuration schema for generating TypeScript types from Dataverse metadata",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["output", "entities"],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "JSON Schema reference"
+        },
+        "output": {
+            "type": "string",
+            "description": "Output file path for generated TypeScript definitions",
+            "pattern": "\\.(d\\.)?ts$"
+        },
+        "entities": {
+            "oneOf": [
+                {
+                    "type": "array",
+                    "description": "List of entity logical names to generate types for",
+                    "items": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*$"
+                    },
+                    "minItems": 1
+                },
+                {
+                    "type": "string",
+                    "enum": ["*"],
+                    "description": "Generate types for all entities"
+                }
+            ]
+        },
+        "includeOptionSets": {
+            "type": "boolean",
+            "description": "Generate enum types for option sets (picklists)",
+            "default": true
+        },
+        "includeActions": {
+            "type": "boolean",
+            "description": "Generate types for custom actions and functions",
+            "default": false
+        },
+        "includeRelationships": {
+            "type": "boolean",
+            "description": "Include navigation properties for relationships",
+            "default": false
+        },
+        "labelLanguage": {
+            "type": "integer",
+            "description": "LCID for label language (1033=English, 1036=French, etc.)",
+            "default": 1033,
+            "examples": [1033, 1036, 1040, 1041, 1031]
+        },
+        "namingConvention": {
+            "type": "string",
+            "enum": ["camelCase", "pascalCase", "logicalName"],
+            "description": "Property naming convention",
+            "default": "camelCase"
+        },
+        "lookupStyle": {
+            "type": "string",
+            "enum": ["guid", "object", "both"],
+            "description": "How to type lookup properties",
+            "default": "guid"
+        },
+        "deltaCache": {
+            "type": "string",
+            "description": "Path to metadata cache file for incremental updates"
+        },
+        "customTypes": {
+            "type": "object",
+            "description": "Custom type mappings for Dataverse types",
+            "additionalProperties": {
+                "type": "string"
+            },
+            "properties": {
+                "money": {
+                    "type": "string",
+                    "enum": ["number", "string", "Decimal"],
+                    "default": "number"
+                },
+                "datetime": {
+                    "type": "string",
+                    "enum": ["Date", "string", "moment"],
+                    "default": "Date"
+                },
+                "decimal": {
+                    "type": "string",
+                    "enum": ["number", "string", "Decimal"],
+                    "default": "number"
+                },
+                "bigint": {
+                    "type": "string",
+                    "enum": ["bigint", "string", "number"],
+                    "default": "bigint"
+                }
+            }
+        },
+        "emitRuntime": {
+            "type": "boolean",
+            "description": "Emit runtime helper functions instead of just type definitions",
+            "default": false
+        },
+        "auth": {
+            "type": "object",
+            "description": "Authentication configuration",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": ["client-credentials", "device-code", "token-callback"],
+                    "description": "Authentication method"
+                },
+                "tenantId": {
+                    "type": "string",
+                    "description": "Azure AD tenant ID"
+                },
+                "clientId": {
+                    "type": "string",
+                    "description": "Azure AD application/client ID"
+                },
+                "clientSecret": {
+                    "type": "string",
+                    "description": "Client secret for client-credentials auth"
+                },
+                "tokenCallback": {
+                    "type": "string",
+                    "description": "Path to module exporting token callback function"
+                }
+            }
+        }
+    }
+}

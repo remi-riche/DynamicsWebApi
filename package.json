@@ -30,10 +30,14 @@
             "require": "./dist/cjs/dynamics-web-api.js"
         }
     },
+    "bin": {
+        "dynamics-web-api": "./dist/cli/generate-types.js"
+    },
     "files": [
         "dist/**/*.js",
         "dist/**/*.mjs",
-        "dist/**/*.d.ts"
+        "dist/**/*.d.ts",
+        "schemas/**/*.json"
     ],
     "author": {
         "name": "Aleksandr Rogov"
@@ -61,8 +65,15 @@
         "typescript": "^5.7.3"
     },
     "dependencies": {
+        "@azure/msal-node": "^2.6.0",
+        "chalk": "^4.1.2",
+        "commander": "^11.1.0",
+        "cosmiconfig": "^9.0.0",
+        "fast-xml-parser": "^4.3.2",
         "http-proxy-agent": "^4.0.1",
-        "https-proxy-agent": "^5.0.1"
+        "https-proxy-agent": "^5.0.1",
+        "ora": "^5.4.1",
+        "xml2js": "^0.6.2"
     },
     "license": "MIT",
     "scripts": {
@@ -84,6 +95,7 @@
         "copyfiles": "copyfiles --flat ./lib/dynamics-web-api.d.ts ./dist/",
         "add-banner": "node ./utils/add-banner.mjs",
         "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.js\"",
+        "generate-types": "node ./dist/cli/generate-types.js",
         "preversion": "npm test",
         "version": "npm run build && git add -A dist",
         "postversion": "git push && git push --tags",
