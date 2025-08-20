@@ -28,8 +28,7 @@ Browser-compiled script and type definitions can be found in a v2 [dist](https:/
 
 Changelog can be found [here](/.github/CHANGELOG.md).
 
->[!NOTE] 
-> "Dynamics 365" in this readme refers to Microsoft Dataverse (formerly known as Microsoft Common Data Service) / Microsoft Dynamics 365 Customer Engagement / Micorosft Dynamics CRM. **NOT** Microsoft Dynamics 365 Finance and Operations.
+**NOTE!** "Dynamics 365" in this readme refers to Microsoft Dataverse (formerly known as Microsoft Common Data Service) / Microsoft Dynamics 365 Customer Engagement / Micorosft Dynamics CRM. **NOT** Microsoft Dynamics 365 Finance and Operations.
 
 ## Usage examples
 
