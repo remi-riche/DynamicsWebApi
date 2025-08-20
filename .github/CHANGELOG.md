@@ -1,3 +1,56 @@
+<a name="v2.3.2"></a>
+# [v2.3.2](https://github.com/AleksandrRogov/DynamicsWebApi/releases/tag/v2.3.2) - 20 Aug 2025
+
+## What's Changed
+* fix(uploadFile): remove content-type 'application/json' when no data by [@makidelille](https://github.com/makidelille) in https://github.com/AleksandrRogov/DynamicsWebApi/pull/192
+
+## New Contributors
+* [@makidelille](https://github.com/makidelille) made their first contribution in https://github.com/AleksandrRogov/DynamicsWebApi/pull/192
+
+**Full Changelog**: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.3.1...v2.3.2
+
+[Changes][v2.3.2]
+
+
+<a name="v2.3.1"></a>
+# [v2.3.1](https://github.com/AleksandrRogov/DynamicsWebApi/releases/tag/v2.3.1) - 26 Jun 2025
+
+**Changes**
+* Added support for Content-ID  `associate` and `associateSingleValued` requests. [#190](https://github.com/AleksandrRogov/DynamicsWebApi/issues/190)  
+
+Example:
+```js
+dynamicsWebApi.startBatch();
+
+dynamicsWebApi.create({
+  contentId: 1,
+  collection: "contacts",
+  data: {
+    firstname: "Khoa",
+    lastname: "Test"
+  }
+});
+
+dynamicsWebApi.create({
+  contentId: 2,
+  collection: "accounts",
+  data: {
+    name: "Khoa Corporation"
+  }
+});
+
+dynamicsWebApi.associate({
+  contentId: "$1",
+  relatedKey: "$2",
+  relationshipName: "arch_Account_Contact_Contact"
+});
+
+const results = await dynamicsWebApi.executeBatch();
+```
+
+[Changes][v2.3.1]
+
+
 <a name="v2.3.0"></a>
 # [v2.3.0](https://github.com/AleksandrRogov/DynamicsWebApi/releases/tag/v2.3.0) - 11 May 2025
 
@@ -1088,6 +1141,8 @@ Added:
 [Changes][v1.2.0]
 
 
+[v2.3.2]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.3.1...v2.3.2
+[v2.3.1]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.3.0...v2.3.1
 [v2.3.0]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.2.1...v2.3.0
 [v2.2.1]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.2.0...v2.2.1
 [v2.2.0]: https://github.com/AleksandrRogov/DynamicsWebApi/compare/v2.1.7...v2.2.0
